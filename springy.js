@@ -4,30 +4,33 @@ var Graph = function()
 	this.nodeSet = {};
 	this.nodes = [];
 	this.edges = [];
+	this.adjacency = {};
 
+	this.nextNodeId = 0;
+	this.nextEdgeId = 0;
 	this.eventListeners = [];
 };
 
-Node = function(data)
+Node = function(id, data)
 {
-	this.id = (Node.nextId += 1);
+	this.id = id;
 	this.data = typeof(data) !== 'undefined' ? data : {};
 };
-Node.nextId = 0;
 
-Edge = function(source, target, data)
+
+Edge = function(id, source, target, data)
 {
-	this.id = (Edge.nextId += 1);
+	this.id = id;
 	this.source = source;
 	this.target = target;
 	this.data = typeof(data) !== 'undefined' ? data : {};
 };
-Edge.nextId = 0;
 
 Graph.prototype.addNode = function(node)
 {
 	this.nodes.push(node);
 	this.nodeSet[node.id] = node;
+
 	this.notify();
 	return node;
 };
@@ -35,22 +38,46 @@ Graph.prototype.addNode = function(node)
 Graph.prototype.addEdge = function(edge)
 {
 	this.edges.push(edge);
+
+	if (typeof(this.adjacency[edge.source.id]) === 'undefined')
+	{
+		this.adjacency[edge.source.id] = [];
+	}
+	if (typeof(this.adjacency[edge.source.id][edge.target.id]) === 'undefined')
+	{
+		this.adjacency[edge.source.id][edge.target.id] = [];
+	}
+
+	this.adjacency[edge.source.id][edge.target.id].push(edge);
+
 	this.notify();
 	return edge;
 };
 
 Graph.prototype.newNode = function(data)
 {
-	var node = new Node(data);
+	var node = new Node(this.nextNodeId++, data);
 	this.addNode(node);
 	return node;
 };
 
 Graph.prototype.newEdge = function(source, target, data)
 {
-	var edge = new Edge(source, target, data);
+	var edge = new Edge(this.nextEdgeId++, source, target, data);
 	this.addEdge(edge);
 	return edge;
+};
+
+// find the edges from node1 to node2
+Graph.prototype.getEdges = function(node1, node2)
+{
+	if (typeof(this.adjacency[node1.id]) !== 'undefined'
+		&& typeof(this.adjacency[node1.id][node2.id]) !== 'undefined')
+	{
+		return this.adjacency[node1.id][node2.id];
+	}
+
+	return [];
 };
 
 
@@ -77,7 +104,6 @@ Layout.ForceDirected = function(graph, stiffness, repulsion, damping)
 
 	this.nodePoints = {}; // keep track of points associated with nodes
 	this.edgeSprings = {}; // keep track of points associated with nodes
-	this.extraSprings = []; // springs that aren't associated with any edges
 
 	this.intervalId = null;
 };
@@ -87,7 +113,7 @@ Layout.ForceDirected.prototype.point = function(node)
 	if (typeof(this.nodePoints[node.id]) === 'undefined')
 	{
 		var mass = typeof(node.data.mass) !== 'undefined' ? node.data.mass : 1.0;
-		this.nodePoints[node.id] = new Layout.ForceDirected.Point(Layout.ForceDirected.Vector.random(), mass);
+		this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
 	}
 
 	return this.nodePoints[node.id];
@@ -98,6 +124,31 @@ Layout.ForceDirected.prototype.spring = function(edge)
 	if (typeof(this.edgeSprings[edge.id]) === 'undefined')
 	{
 		var length = typeof(edge.data.length) !== 'undefined' ? edge.data.length : 1.0;
+
+		var existingSpring = false;
+
+		var from = this.graph.getEdges(edge.source, edge.target);
+		from.forEach(function(e){
+			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
+				existingSpring = this.edgeSprings[e.id];
+			}
+		}, this);
+
+		if (existingSpring !== false) {
+			return new Layout.ForceDirected.Spring(existingSpring.point1, existingSpring.point2, 0.0, 0.0);
+		}
+
+		var to = this.graph.getEdges(edge.target, edge.source);
+		from.forEach(function(e){
+			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
+				existingSpring = this.edgeSprings[e.id];
+			}
+		}, this);
+
+		if (existingSpring !== false) {
+			return new Layout.ForceDirected.Spring(existingSpring.point2, existingSpring.point1, 0.0, 0.0);
+		}
+
 		this.edgeSprings[edge.id] = new Layout.ForceDirected.Spring(
 			this.point(edge.source), this.point(edge.target), length, this.stiffness
 		);
@@ -130,10 +181,6 @@ Layout.ForceDirected.prototype.eachSpring = function(callback)
 	var t = this;
 	this.graph.edges.forEach(function(e){
 		callback.call(t, t.spring(e));
-	});
-
-	this.extraSprings.forEach(function(s){
-		callback.call(t, s);
 	});
 };
 
@@ -183,7 +230,7 @@ Layout.ForceDirected.prototype.updateVelocity = function(timestep)
 {
 	this.eachNode(function(node, point) {
 		point.v = point.v.add(point.f.multiply(timestep)).multiply(this.damping);
-		point.f = new Layout.ForceDirected.Vector(0,0);
+		point.f = new Vector(0,0);
 	});
 };
 
@@ -219,8 +266,8 @@ Layout.ForceDirected.prototype.start = function(interval, render, done)
 		t.applyCoulombsLaw();
 		t.applyHookesLaw();
 		t.attractToCentre();
-		t.updateVelocity(0.05);
-		t.updatePosition(0.05);
+		t.updateVelocity(0.04);
+		t.updatePosition(0.04);
 
 		if (typeof(render) !== 'undefined') { render(); }
 
@@ -253,48 +300,48 @@ Layout.ForceDirected.prototype.nearest = function(pos)
 };
 
 // Vector
-Layout.ForceDirected.Vector = function(x, y)
+Vector = function(x, y)
 {
 	this.x = x;
 	this.y = y;
 };
 
-Layout.ForceDirected.Vector.random = function()
+Vector.random = function()
 {
-	return new Layout.ForceDirected.Vector(2.0 * (Math.random() - 0.5), 2.0 * (Math.random() - 0.5));
+	return new Vector(2.0 * (Math.random() - 0.5), 2.0 * (Math.random() - 0.5));
 };
 
-Layout.ForceDirected.Vector.prototype.add = function(v2)
+Vector.prototype.add = function(v2)
 {
-	return new Layout.ForceDirected.Vector(this.x + v2.x, this.y + v2.y);
+	return new Vector(this.x + v2.x, this.y + v2.y);
 };
 
-Layout.ForceDirected.Vector.prototype.subtract = function(v2)
+Vector.prototype.subtract = function(v2)
 {
-	return new Layout.ForceDirected.Vector(this.x - v2.x, this.y - v2.y);
+	return new Vector(this.x - v2.x, this.y - v2.y);
 };
 
-Layout.ForceDirected.Vector.prototype.multiply = function(n)
+Vector.prototype.multiply = function(n)
 {
-	return new Layout.ForceDirected.Vector(this.x * n, this.y * n);
+	return new Vector(this.x * n, this.y * n);
 };
 
-Layout.ForceDirected.Vector.prototype.divide = function(n)
+Vector.prototype.divide = function(n)
 {
-	return new Layout.ForceDirected.Vector(this.x / n, this.y / n);
+	return new Vector(this.x / n, this.y / n);
 };
 
-Layout.ForceDirected.Vector.prototype.magnitude = function()
+Vector.prototype.magnitude = function()
 {
 	return Math.sqrt(this.x*this.x + this.y*this.y);
 };
 
-Layout.ForceDirected.Vector.prototype.normal = function()
+Vector.prototype.normal = function()
 {
-	return new Layout.ForceDirected.Vector(-this.y, this.x);
+	return new Vector(-this.y, this.x);
 };
 
-Layout.ForceDirected.Vector.prototype.normalise = function()
+Vector.prototype.normalise = function()
 {
 	return this.divide(this.magnitude());
 };
@@ -304,8 +351,8 @@ Layout.ForceDirected.Point = function(position, mass)
 {
 	this.p = position; // position
 	this.m = mass; // mass
-	this.v = new Layout.ForceDirected.Vector(0, 0); // velocity
-	this.f = new Layout.ForceDirected.Vector(0, 0); // force
+	this.v = new Vector(0, 0); // velocity
+	this.f = new Vector(0, 0); // force
 };
 
 Layout.ForceDirected.Point.prototype.applyForce = function(force)

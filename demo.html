@@ -7,109 +7,118 @@
 
 var graph = new Graph();
 
-var n1 = graph.newNode({label: "1"});
-var n2 = graph.newNode({label: "2"});
-var n3 = graph.newNode({label: "3"});
-var n4 = graph.newNode({label: "4"});
-var n5 = graph.newNode({label: "5"});
-var n6 = graph.newNode({label: "6", fill: '#EEF'});
-var n7 = graph.newNode({label: "7"});
-var n8 = graph.newNode({label: "8"});
-var n9 = graph.newNode({label: "9"});
-var n10 = graph.newNode({label: "10"});
-var n11 = graph.newNode({label: "11", fill: '#EFE'});
-var n12 = graph.newNode({label: "12", fill: '#FEE'});
-var n13 = graph.newNode({label: "13"});
-var n14 = graph.newNode({label: "14"});
-var n15 = graph.newNode({label: "15"});
 
-var e1 = graph.newEdge(n1, n2);
-var e2 = graph.newEdge(n2, n3);
-var e3 = graph.newEdge(n3, n4);
-var e4 = graph.newEdge(n4, n1);
-var e5 = graph.newEdge(n3, n5);
-var e6 = graph.newEdge(n4, n5);
-var e7 = graph.newEdge(n5, n6);
-var e8 = graph.newEdge(n5, n7);
-var e9 = graph.newEdge(n1, n8);
-var e10 = graph.newEdge(n2, n9);
-var e11 = graph.newEdge(n9, n10);
-var e12 = graph.newEdge(n9, n11);
-var e13 = graph.newEdge(n1, n12);
-var e14 = graph.newEdge(n12, n13);
-var e15 = graph.newEdge(n13, n14);
-var e16 = graph.newEdge(n14, n15);
-var e17 = graph.newEdge(n15, n5);
-var e18 = graph.newEdge(n12, n14);
+// generate a random graph
+
+var n = [];
+for (var i=0; i<15; i += 1)
+{
+	n[i] = graph.newNode({label: ""+i});
+}
+
+for (i=0; i<20; i += 1)
+{
+	var i1 = Math.floor(Math.random() * n.length);
+	var i2 = i1;
+
+	while (i1 === i2) {
+		i2 = Math.floor(Math.random() * n.length);
+	}
+
+	var n1 = n[i1];
+	var n2 = n[i2];
+
+	var e = graph.newEdge(n1, n2);
+
+	var colors = ['#00A0B0', '#6A4A3C', '#CC333F', '#EB6841', '#EDC951', '#7DBE3C'];
+	e.data.stroke = colors[Math.floor(Math.random() * colors.length)];
+}
+
 
 // -----------
 
 var width = 800;
 var height = 600;
-var zoom = 50.0;
+var zoom = 40.0;
 
 // convert to/from screen coordinates
 toScreen = function(p) {
-	return {
-		x: p.x * zoom + width/2.0,
-		y: p.y * zoom + height/2.0
-	};
+	return new Vector(p.x * zoom + width/2.0, p.y * zoom + height/2.0);
 };
 
 fromScreen = function(s) {
-	return {
-		x: (s.x - width/2.0) / zoom,
-		y: (s.y - height/2.0) / zoom
-	};
+	return new Vector((s.x - width/2.0) / zoom, (s.y - height/2.0) / zoom);
 };
 
 var paper = Raphael(10, 10, width, height);
 
 var layout = new Layout.ForceDirected(graph, 500.0, 300.0, 0.5);
 
-var boxWidth = 60;
+var boxWidth = 30;
 var boxHeight = 20;
 
-var renderer = new Renderer(10, layout,
+var renderer = new Renderer(1, layout,
 	function clear()
 	{
 		paper.clear();
 		var r = paper.rect(0,0,width-1,height-1);
-		r.attr("fill", "#FFFFFF");
-		r.attr("stroke", "none");
+		r.attr({"fill": "#FFFFFF", "stroke": "none"});
 	},
 	function drawEdge(edge, p1, p2)
 	{
-		var x1 = Math.floor(toScreen(p1).x);
-		var y1 = Math.floor(toScreen(p1).y);
-		var x2 = Math.floor(toScreen(p2).x);
-		var y2 = Math.floor(toScreen(p2).y);
-		var c = paper.path(["M", x1, y1, "L", x2, y2]);
-		c.attr("stroke-width", 1.0);
+		var x1 = toScreen(p1).x;
+		var y1 = toScreen(p1).y;
+		var x2 = toScreen(p2).x;
+		var y2 = toScreen(p2).y;
 
-		var point = intersect_line_box(toScreen(p1), toScreen(p2), {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
-		var x = point.x;
-		var y = point.y;
+		var direction = new Vector(x2-x1, y2-y1);
+		var normal = direction.normal().normalise();
 
-		var arrow = paper.path(["M", -7, 3, "L", 0, 0, "L", 7, 0, "L", 0, 0, "L", -7, -3, "L", -6, 0, "z"]);
-		arrow.rotate(Math.atan2(y2 - y1, x2 - x1) * (180.0 / Math.PI));
-		arrow.translate(x, y);
-		arrow.attr("fill", "black");
-		arrow.attr("stroke", "none");
+		var from = graph.getEdges(edge.source, edge.target);
+		var to = graph.getEdges(edge.target, edge.source);
+
+		var total = from.length + to.length;
+		var n = from.indexOf(edge);
+
+		var spacing = 6.0;
+		var totalWidth = total * spacing;
+
+		// Figure out how far off centre the line should be drawn
+		var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
+
+		var stroke = typeof(edge.data.stroke) !== 'undefined' ? edge.data.stroke : "#000000";
+
+		var s1 = toScreen(p1).add(offset);
+		var s2 = toScreen(p2).add(offset);
+
+		var intersection = intersect_line_box(s1, s2, {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
+
+		var c2 = paper.path(["M", s1.x, s1.y, "L", intersection.x, intersection.y]);
+		c2.attr({stroke: stroke, "stroke-width": 2});
+
+		var arrow = paper.path(["M", -7, 4, "L", 0, 0, "L", 7, 0, "L", 0, 0, "L", -7, -4, "L", -5, 0, "z"]);
+		arrow.rotate(Math.atan2(y2 - y1, x2 - x1) * (180.0 / Math.PI), 0, 0);
+		arrow.translate(intersection.x, intersection.y);
+		arrow.attr({fill: stroke, stroke: "none"});
+
 	},
 	function drawNode(node, p)
 	{
-
 		var fill = typeof(node.data.fill) !== 'undefined' ? node.data.fill : "#FFFFFF";
 
 		var s = toScreen(p);
-		var rect = paper.rect(s.x - boxWidth/2.0, s.y - boxHeight/2.0, boxWidth, boxHeight, 3);
-		rect.attr("fill", fill);
-		rect.attr("stroke-width", 1.0);
+		var rect = paper.rect(s.x - boxWidth/2.0, s.y - boxHeight/2.0, boxWidth, boxHeight, 4);
+		rect.attr({fill: fill, "stroke-width": 2});
 
 		if (typeof(node.data.label) !== 'undefined')
 		{
 			var text = paper.text(s.x, s.y, node.data.label);
+			text.attr({
+				"font-family": "Helvetica Neue",
+				"font-size": "12px",
+				"font-weight": "bold",
+			});
+
 		}
 	}
 );
@@ -141,8 +150,8 @@ jQuery('svg').mousemove(function(e){
 
 		selected.point.p.x = p.x;
 		selected.point.p.y = p.y;
+		renderer.start();
 	}
-	renderer.start();
 });
 
 jQuery(window).bind('mouseup',function(e){
