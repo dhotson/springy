@@ -1,0 +1,199 @@
+<html>
+<body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+<script src="raphael-min.js"></script>
+<script src="springy.js"></script>
+<script>
+
+var graph = new Graph();
+
+var n1 = graph.newNode({label: "1"});
+var n2 = graph.newNode({label: "2"});
+var n3 = graph.newNode({label: "3"});
+var n4 = graph.newNode({label: "4"});
+var n5 = graph.newNode({label: "5"});
+var n6 = graph.newNode({label: "6", fill: '#EEF'});
+var n7 = graph.newNode({label: "7"});
+var n8 = graph.newNode({label: "8"});
+var n9 = graph.newNode({label: "9"});
+var n10 = graph.newNode({label: "10"});
+var n11 = graph.newNode({label: "11", fill: '#EFE'});
+var n12 = graph.newNode({label: "12", fill: '#FEE'});
+var n13 = graph.newNode({label: "13"});
+var n14 = graph.newNode({label: "14"});
+var n15 = graph.newNode({label: "15"});
+
+var e1 = graph.newEdge(n1, n2);
+var e2 = graph.newEdge(n2, n3);
+var e3 = graph.newEdge(n3, n4);
+var e4 = graph.newEdge(n4, n1);
+var e5 = graph.newEdge(n3, n5);
+var e6 = graph.newEdge(n4, n5);
+var e7 = graph.newEdge(n5, n6);
+var e8 = graph.newEdge(n5, n7);
+var e9 = graph.newEdge(n1, n8);
+var e10 = graph.newEdge(n2, n9);
+var e11 = graph.newEdge(n9, n10);
+var e12 = graph.newEdge(n9, n11);
+var e13 = graph.newEdge(n1, n12);
+var e14 = graph.newEdge(n12, n13);
+var e15 = graph.newEdge(n13, n14);
+var e16 = graph.newEdge(n14, n15);
+var e17 = graph.newEdge(n15, n5);
+var e18 = graph.newEdge(n12, n14);
+
+// -----------
+
+var width = 800;
+var height = 600;
+var zoom = 50.0;
+
+// convert to/from screen coordinates
+toScreen = function(p) {
+	return {
+		x: p.x * zoom + width/2.0,
+		y: p.y * zoom + height/2.0
+	};
+};
+
+fromScreen = function(s) {
+	return {
+		x: (s.x - width/2.0) / zoom,
+		y: (s.y - height/2.0) / zoom
+	};
+};
+
+var paper = Raphael(10, 10, width, height);
+
+var layout = new Layout.ForceDirected(graph, 500.0, 300.0, 0.5);
+
+var boxWidth = 60;
+var boxHeight = 20;
+
+var renderer = new Renderer(10, layout,
+	function clear()
+	{
+		paper.clear();
+		var r = paper.rect(0,0,width-1,height-1);
+		r.attr("fill", "#FFFFFF");
+		r.attr("stroke", "none");
+	},
+	function drawEdge(edge, p1, p2)
+	{
+		var x1 = Math.floor(toScreen(p1).x);
+		var y1 = Math.floor(toScreen(p1).y);
+		var x2 = Math.floor(toScreen(p2).x);
+		var y2 = Math.floor(toScreen(p2).y);
+		var c = paper.path(["M", x1, y1, "L", x2, y2]);
+		c.attr("stroke-width", 1.0);
+
+		var point = intersect_line_box(toScreen(p1), toScreen(p2), {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
+		var x = point.x;
+		var y = point.y;
+
+		var arrow = paper.path(["M", -7, 3, "L", 0, 0, "L", 7, 0, "L", 0, 0, "L", -7, -3, "L", -6, 0, "z"]);
+		arrow.rotate(Math.atan2(y2 - y1, x2 - x1) * (180.0 / Math.PI));
+		arrow.translate(x, y);
+		arrow.attr("fill", "black");
+		arrow.attr("stroke", "none");
+	},
+	function drawNode(node, p)
+	{
+
+		var fill = typeof(node.data.fill) !== 'undefined' ? node.data.fill : "#FFFFFF";
+
+		var s = toScreen(p);
+		var rect = paper.rect(s.x - boxWidth/2.0, s.y - boxHeight/2.0, boxWidth, boxHeight, 3);
+		rect.attr("fill", fill);
+		rect.attr("stroke-width", 1.0);
+
+		if (typeof(node.data.label) !== 'undefined')
+		{
+			var text = paper.text(s.x, s.y, node.data.label);
+		}
+	}
+);
+
+renderer.start();
+
+
+// half-assed drag and drop
+var selected = null;
+jQuery('svg').mousedown(function(e){
+	var pos = jQuery(this).position();
+	var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
+	selected = layout.nearest(p);
+
+	selected.oldm = selected.point.m;
+	selected.olddata = selected.node.data;
+	selected.node.data = jQuery.extend(true, {}, selected.node.data); // deep copy
+
+	selected.point.m = 1000.0;
+	selected.node.data.fill = '#EEEEEE';
+
+});
+
+jQuery('svg').mousemove(function(e){
+	if (selected !== null)
+	{
+		var pos = jQuery(this).position();
+		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
+
+		selected.point.p.x = p.x;
+		selected.point.p.y = p.y;
+	}
+	renderer.start();
+});
+
+jQuery(window).bind('mouseup',function(e){
+	if (selected !== null)
+	{
+		selected.node.data = selected.olddata;
+	}
+	selected = null;
+});
+
+
+// helpers for figuring out where to draw arrows
+function intersect_line_line(p1, p2, p3, p4)
+{
+	var denom = ((p4.y - p3.y)*(p2.x - p1.x) - (p4.x - p3.x)*(p2.y - p1.y));
+
+	// lines are parallel
+	if (denom === 0) {
+		return false;
+	}
+
+	var ua = ((p4.x - p3.x)*(p1.y - p3.y) - (p4.y - p3.y)*(p1.x - p3.x)) / denom;
+	var ub = ((p2.x - p1.x)*(p1.y - p3.y) - (p2.y - p1.y)*(p1.x - p3.x)) / denom;
+
+	if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
+		return false;
+	}
+
+	return {
+		x: p1.x + ua * (p2.x - p1.x),
+		y: p1.y + ua * (p2.y - p1.y)
+	};
+}
+
+function intersect_line_box(p1, p2, p3, w, h)
+{
+	var tl = {x: p3.x, y: p3.y};
+	var tr = {x: p3.x + w, y: p3.y};
+	var bl = {x: p3.x, y: p3.y + h};
+	var br = {x: p3.x + w, y: p3.y + h};
+
+	var result;
+	if (result = intersect_line_line(p1, p2, tl, tr)) { return result; } // top
+	if (result = intersect_line_line(p1, p2, tr, br)) { return result; } // right
+	if (result = intersect_line_line(p1, p2, br, bl)) { return result; } // bottom
+	if (result = intersect_line_line(p1, p2, bl, tl)) { return result; } // left
+
+	return false;
+}
+
+
+</script>
+</body>
+</html>
