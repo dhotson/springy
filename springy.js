@@ -1,3 +1,27 @@
+/**
+Copyright (c) 2010 Dennis Hotson
+
+ Permission is hereby granted, free of charge, to any person
+ obtaining a copy of this software and associated documentation
+ files (the "Software"), to deal in the Software without
+ restriction, including without limitation the rights to use,
+ copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the
+ Software is furnished to do so, subject to the following
+ conditions:
+
+ The above copyright notice and this permission notice shall be
+ included in all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ OTHER DEALINGS IN THE SOFTWARE.
+*/
 
 var Graph = function()
 {
@@ -17,7 +41,6 @@ Node = function(id, data)
 	this.data = typeof(data) !== 'undefined' ? data : {};
 };
 
-
 Edge = function(id, source, target, data)
 {
 	this.id = id;
@@ -28,7 +51,11 @@ Edge = function(id, source, target, data)
 
 Graph.prototype.addNode = function(node)
 {
-	this.nodes.push(node);
+	if (typeof(this.nodeSet[node.id]) === 'undefined')
+	{
+		this.nodes.push(node);
+	}
+
 	this.nodeSet[node.id] = node;
 
 	this.notify();
@@ -37,18 +64,34 @@ Graph.prototype.addNode = function(node)
 
 Graph.prototype.addEdge = function(edge)
 {
-	this.edges.push(edge);
+	var exists = false;
+	this.edges.forEach(function(e){
+		if (edge.id === e.id) { exists = true; }
+	});
+
+	if (!exists)
+	{
+		this.edges.push(edge);
+	}
 
 	if (typeof(this.adjacency[edge.source.id]) === 'undefined')
 	{
-		this.adjacency[edge.source.id] = [];
+		this.adjacency[edge.source.id] = {};
 	}
 	if (typeof(this.adjacency[edge.source.id][edge.target.id]) === 'undefined')
 	{
 		this.adjacency[edge.source.id][edge.target.id] = [];
 	}
 
-	this.adjacency[edge.source.id][edge.target.id].push(edge);
+	exists = false;
+	this.adjacency[edge.source.id][edge.target.id].forEach(function(e){
+			if (edge.id === e.id) { exists = true; }
+	});
+
+	if (!exists)
+	{
+		this.adjacency[edge.source.id][edge.target.id].push(edge);
+	}
 
 	this.notify();
 	return edge;
@@ -80,6 +123,119 @@ Graph.prototype.getEdges = function(node1, node2)
 	return [];
 };
 
+// remove a node and it's associated edges from the graph
+Graph.prototype.removeNode = function(node)
+{
+	if (typeof(this.nodeSet[node.id]) !== 'undefined')
+	{
+		delete this.nodeSet[node.id];
+	}
+
+	for (var i = this.nodes.length - 1; i >= 0; i--)
+	{
+		if (this.nodes[i].id === node.id)
+		{
+			this.nodes.splice(i, 1);
+		}
+	}
+
+	var tmpEdges = this.edges.slice();
+	tmpEdges.forEach(function(e) {
+		if (e.source.id === node.id || e.target.id === node.id)
+		{
+			this.removeEdge(e);
+		}
+	}, this);
+
+	this.notify();
+};
+
+
+// remove a node and it's associated edges from the graph
+Graph.prototype.removeEdge = function(edge)
+{
+	for (var i = this.edges.length - 1; i >= 0; i--)
+	{
+		if (this.edges[i].id === edge.id)
+		{
+			this.edges.splice(i, 1);
+		}
+	}
+
+	for (var x in this.adjacency)
+	{
+		for (var y in this.adjacency[x])
+		{
+			var edges = this.adjacency[x][y];
+
+			for (var j=edges.length - 1; j>=0; j--)
+			{
+				if (this.adjacency[x][y][j].id === edge.id)
+				{
+					this.adjacency[x][y].splice(j, 1);
+				}
+			}
+		}
+	}
+
+	this.notify();
+};
+
+/* Merge a list of nodes and edges into the current graph. eg.
+var o = {
+	nodes: [
+		{id: 123, data: {type: 'user', userid: 123, displayname: 'aaa'}},
+		{id: 234, data: {type: 'user', userid: 234, displayname: 'bbb'}}
+	],
+	edges: [
+		{from: 0, to: 1, type: 'submitted_design', directed: true, data: {weight: }}
+	]
+}
+*/
+Graph.prototype.merge = function(data)
+{
+	var nodes = [];
+	data.nodes.forEach(function(n) {
+		nodes.push(graph.addNode(new Node(n.id, n.data)));
+	}, this);
+
+	data.edges.forEach(function(e) {
+		var from = nodes[e.from];
+		var to = nodes[e.to];
+
+		var id = (e.directed)
+			? (id = e.type + "-" + from.id + "-" + to.id)
+			: (from.id < to.id) // normalise id for non-directed edges
+				? e.type + "-" + from.id + "-" + to.id
+				: e.type + "-" + to.id + "-" + from.id;
+
+		var edge = graph.addEdge(new Edge(id, from, to, e.data));
+		edge.data.type = e.type;
+	}, this);
+};
+
+Graph.prototype.filterNodes = function(fn)
+{
+	var tmpNodes = this.nodes.slice();
+	tmpNodes.forEach(function(n) {
+		if (!fn(n))
+		{
+			this.removeNode(n);
+		}
+	}, this);
+};
+
+Graph.prototype.filterEdges = function(fn)
+{
+	var tmpEdges = this.edges.slice();
+	tmpEdges.forEach(function(e) {
+		if (!fn(e))
+		{
+			this.removeEdge(e);
+		}
+	}, this);
+};
+
 
 Graph.prototype.addGraphListener = function(obj)
 {
@@ -103,7 +259,7 @@ Layout.ForceDirected = function(graph, stiffness, repulsion, damping)
 	this.damping = damping; // velocity damping factor
 
 	this.nodePoints = {}; // keep track of points associated with nodes
-	this.edgeSprings = {}; // keep track of points associated with nodes
+	this.edgeSprings = {}; // keep track of springs associated with edges
 
 	this.intervalId = null;
 };
@@ -221,7 +377,7 @@ Layout.ForceDirected.prototype.attractToCentre = function()
 {
 	this.eachNode(function(node, point) {
 		var direction = point.p.multiply(-1.0);
-		point.applyForce(direction.multiply(this.repulsion / 5.0));
+		point.applyForce(direction.multiply(this.repulsion / 50.0));
 	});
 };
 
@@ -266,8 +422,8 @@ Layout.ForceDirected.prototype.start = function(interval, render, done)
 		t.applyCoulombsLaw();
 		t.applyHookesLaw();
 		t.attractToCentre();
-		t.updateVelocity(0.04);
-		t.updatePosition(0.04);
+		t.updateVelocity(0.03);
+		t.updatePosition(0.03);
 
 		if (typeof(render) !== 'undefined') { render(); }
 
@@ -299,6 +455,33 @@ Layout.ForceDirected.prototype.nearest = function(pos)
 	return min;
 };
 
+// returns [bottomleft, topright]
+Layout.ForceDirected.prototype.getBoundingBox = function()
+{
+	var bottomleft = new Vector(-2,-2);
+	var topright = new Vector(2,2);
+
+	this.eachNode(function(n, point) {
+		if (point.p.x < bottomleft.x) {
+			bottomleft.x = point.p.x;
+		}
+		if (point.p.y < bottomleft.y) {
+			bottomleft.y = point.p.y;
+		}
+		if (point.p.x > topright.x) {
+			topright.x = point.p.x;
+		}
+		if (point.p.y > topright.y) {
+			topright.y = point.p.y;
+		}
+	});
+
+	var padding = topright.subtract(bottomleft).multiply(0.07); // 5% padding
+
+	return {bottomleft: bottomleft.subtract(padding), topright: topright.add(padding)};
+};
+
+
 // Vector
 Vector = function(x, y)
 {
@@ -308,7 +491,7 @@ Vector = function(x, y)
 
 Vector.random = function()
 {
-	return new Vector(2.0 * (Math.random() - 0.5), 2.0 * (Math.random() - 0.5));
+	return new Vector(10.0 * (Math.random() - 0.5), 10.0 * (Math.random() - 0.5));
 };
 
 Vector.prototype.add = function(v2)
