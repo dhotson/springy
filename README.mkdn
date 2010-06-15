@@ -16,6 +16,12 @@ figure out how to show a network graph in a nice way.
 Try to imagine it as a bunch of springs connected to each other.
 
 
+Demo
+----
+
+[demo](http://dhotson.github.com/springy/demo.html)
+
+
 Basic Usage
 ----
 
