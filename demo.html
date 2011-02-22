@@ -30,7 +30,7 @@ graph.newEdge(dennis, bianca, {color: '#CC333F'});
 graph.newEdge(bianca, monty, {color: '#EB6841'});
 
 jQuery(document).ready(function(){
-	jQuery('#springydemo').springy(graph);
+	jQuery('#springydemo').springy({ 'graph': graph });
 });
 
 </script>
