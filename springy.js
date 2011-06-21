@@ -196,7 +196,7 @@ Graph.prototype.merge = function(data)
 {
 	var nodes = [];
 	data.nodes.forEach(function(n) {
-		nodes.push(graph.addNode(new Node(n.id, n.data)));
+		nodes.push(this.addNode(new Node(n.id, n.data)));
 	}, this);
 
 	data.edges.forEach(function(e) {
@@ -209,7 +209,7 @@ Graph.prototype.merge = function(data)
 				? e.type + "-" + from.id + "-" + to.id
 				: e.type + "-" + to.id + "-" + from.id;
 
-		var edge = graph.addEdge(new Edge(id, from, to, e.data));
+		var edge = this.addEdge(new Edge(id, from, to, e.data));
 		edge.data.type = e.type;
 	}, this);
 };
