@@ -39,12 +39,22 @@ jQuery.fn.springy = function(params) {
 	var ctx = canvas.getContext("2d");
 	var layout = new Layout.ForceDirected(graph, stiffness, repulsion, damping);
 
+	var requestAnimFrame =
+		window.requestAnimationFrame ||
+		window.webkitRequestAnimationFrame ||
+		window.mozRequestAnimationFrame ||
+		window.oRequestAnimationFrame ||
+		window.msRequestAnimationFrame ||
+		function(callback, element) {
+			window.setTimeout(callback, 10);
+		};
+
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
 	var targetBB = {bottomleft: new Vector(-2, -2), topright: new Vector(2, 2)};
 
 	// auto adjusting bounding box
-	setInterval(function(){
+	requestAnimFrame(function adjust(){
 		targetBB = layout.getBoundingBox();
 		// current gets 20% closer to target every iteration
 		currentBB = {
@@ -53,7 +63,9 @@ jQuery.fn.springy = function(params) {
 			topright: currentBB.topright.add( targetBB.topright.subtract(currentBB.topright)
 				.divide(10))
 		};
-	}, 50);
+
+		requestAnimFrame(adjust);
+	});
 
 	// convert to/from screen coordinates
 	toScreen = function(p) {

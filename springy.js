@@ -418,7 +418,17 @@ Layout.ForceDirected.prototype.start = function(interval, render, done)
 		return; // already running
 	}
 
-	this.intervalId = setInterval(function() {
+	var requestAnimFrame =
+		window.requestAnimationFrame ||
+		window.webkitRequestAnimationFrame ||
+		window.mozRequestAnimationFrame ||
+		window.oRequestAnimationFrame ||
+		window.msRequestAnimationFrame ||
+		function(callback, element) {
+			window.setTimeout(callback, interval);
+		};
+
+	requestAnimFrame(function step() {
 		t.applyCoulombsLaw();
 		t.applyHookesLaw();
 		t.attractToCentre();
@@ -428,13 +438,15 @@ Layout.ForceDirected.prototype.start = function(interval, render, done)
 		if (typeof(render) !== 'undefined') { render(); }
 
 		// stop simulation when energy of the system goes below a threshold
-		if (t.totalEnergy() < 0.1)
+		if (t.totalEnergy() < 0.01)
 		{
-			clearInterval(t.intervalId);
-			t.intervalId = null;
 			if (typeof(done) !== 'undefined') { done(); }
 		}
-	}, interval);
+		else
+		{
+			requestAnimFrame(step);
+		}
+	});
 };
 
 // Find the nearest point to a particular position
