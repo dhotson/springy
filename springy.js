@@ -511,7 +511,7 @@ Vector.prototype.multiply = function(n)
 
 Vector.prototype.divide = function(n)
 {
-	return new Vector(this.x / n, this.y / n);
+	return new Vector((this.x / n) || 0, (this.y / n) || 0);
 };
 
 Vector.prototype.magnitude = function()
