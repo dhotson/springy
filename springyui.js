@@ -121,11 +121,18 @@ jQuery.fn.springy = function(params) {
 	});
 
 	Node.prototype.getWidth = function() {
-		ctx.save();
 		var text = typeof(this.data.label) !== 'undefined' ? this.data.label : this.id;
+		if (this._width && this._width[text])
+			return this._width[text];
+
+		ctx.save();
 		ctx.font = "16px Verdana, sans-serif";
 		var width = ctx.measureText(text).width + 10;
 		ctx.restore();
+
+		this._width || (this._width = {});
+		this._width[text] = width;
+
 		return width;
 	};
 
