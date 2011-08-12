@@ -26,14 +26,14 @@ Copyright (c) 2010 Dennis Hotson
 (function() {
 
 jQuery.fn.springy = function(params) {
-    var graph = params.graph;
-    if(!graph){
-        return;
-    }
-    
-    var stiffness = params.stiffness || 400.0;
-    var repulsion = params.repulsion || 400.0;
-    var damping = params.damping || 0.5;
+	var graph = params.graph;
+	if(!graph){
+			return;
+	}
+
+	var stiffness = params.stiffness || 400.0;
+	var repulsion = params.repulsion || 400.0;
+	var damping = params.damping || 0.5;
 
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");

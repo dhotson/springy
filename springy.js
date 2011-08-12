@@ -35,13 +35,13 @@ var Graph = function()
 	this.eventListeners = [];
 };
 
-Node = function(id, data)
+var Node = function(id, data)
 {
 	this.id = id;
 	this.data = typeof(data) !== 'undefined' ? data : {};
 };
 
-Edge = function(id, source, target, data)
+var Edge = function(id, source, target, data)
 {
 	this.id = id;
 	this.source = source;
