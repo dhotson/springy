@@ -414,6 +414,10 @@ Layout.ForceDirected.prototype.start = function(interval, render, done)
 {
 	var t = this;
 
+	if (this._started) return;
+
+	this._started = true;
+
 	if (this.intervalId !== null) {
 		return; // already running
 	}
@@ -440,6 +444,7 @@ Layout.ForceDirected.prototype.start = function(interval, render, done)
 		// stop simulation when energy of the system goes below a threshold
 		if (t.totalEnergy() < 0.01)
 		{
+			t._started = false;
 			if (typeof(done) !== 'undefined') { done(); }
 		}
 		else
