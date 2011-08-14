@@ -39,6 +39,7 @@ jQuery.fn.springy = function(params) {
 	var ctx = canvas.getContext("2d");
 	var layout = new Layout.ForceDirected(graph, stiffness, repulsion, damping);
 
+	// This code is duplicated in springy.js.
 	var requestAnimFrame =
 		window.requestAnimationFrame ||
 		window.webkitRequestAnimationFrame ||
@@ -96,6 +97,8 @@ jQuery.fn.springy = function(params) {
 
 		if (selected.node !== null)
 		{
+			// Part of the same bug mentioned later. Store the previous mass
+			// before upscaling it for dragging.
 			dragged.point.m = 10000.0;
 		}
 
@@ -117,6 +120,9 @@ jQuery.fn.springy = function(params) {
 	});
 
 	jQuery(window).bind('mouseup',function(e){
+		// Bug! Node's mass isn't reset on mouseup. Nodes which have been
+		// dragged don't repulse very well. Store the initial mass in mousedown
+		// and then restore it here.
 		dragged = null;
 	});
 
@@ -137,6 +143,7 @@ jQuery.fn.springy = function(params) {
 	};
 
 	Node.prototype.getHeight = function() {
+		// Magic number with no explanation.
 		return 20;
 	};
 
