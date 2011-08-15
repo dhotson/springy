@@ -26,7 +26,7 @@ Copyright (c) 2010 Dennis Hotson
 (function() {
 
 jQuery.fn.springy = function(params) {
-	var graph = params.graph || new Graph();
+	this.graph = params.graph || new Graph();
 
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
@@ -34,7 +34,7 @@ jQuery.fn.springy = function(params) {
 
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
-	var layout = new Layout.ForceDirected(graph, stiffness, repulsion, damping);
+	this.layout = new Layout.ForceDirected(graph, stiffness, repulsion, damping);
 
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
@@ -281,6 +281,8 @@ jQuery.fn.springy = function(params) {
 
 		return false;
 	}
+
+	return this;
 }
 
 })();
