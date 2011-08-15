@@ -26,7 +26,7 @@ Copyright (c) 2010 Dennis Hotson
 (function() {
 
 jQuery.fn.springy = function(params) {
-	this.graph = params.graph || new Graph();
+	var graph = this.graph = params.graph || new Graph();
 
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
