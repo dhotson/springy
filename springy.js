@@ -305,10 +305,7 @@ Layout.ForceDirected.prototype.applyCoulombsLaw = function() {
 			if (point1 !== point2)
 			{
 				var d = point1.p.subtract(point2.p);
-				// Why is distance = mag + 1.0? If there's a good reason for
-				// it, leave a comment. Is it to keep the repulsion from being
-				// way too strong at small distances?
-				var distance = d.magnitude() + 1.0;
+				var distance = d.magnitude();
 				var direction = d.normalise();
 
 				// apply force to each end point
@@ -343,8 +340,8 @@ Layout.ForceDirected.prototype.updateVelocity = function(timestep) {
 	this.eachNode(function(node, point) {
 		// Is this, along with updatePosition below, the only places that your
 		// integration code exist?
-		point.v = point.v.add(point.f.multiply(timestep)).multiply(this.damping);
-		point.f = new Vector(0,0);
+		point.v = point.v.add(point.a.multiply(timestep)).multiply(this.damping);
+		point.a = new Vector(0,0);
 	});
 };
 
@@ -356,13 +353,12 @@ Layout.ForceDirected.prototype.updatePosition = function(timestep) {
 	});
 };
 
+// Calculate the total kinetic energy of the system
 Layout.ForceDirected.prototype.totalEnergy = function(timestep) {
 	var energy = 0.0;
 	this.eachNode(function(node, point) {
 		var speed = point.v.magnitude();
-		// A comment might be warranted explaining why the factor of 1/2 is
-		// unnecessary.
-		energy += speed * speed;
+		energy += 0.5 * point.m * speed * speed;
 	});
 
 	return energy;
@@ -494,12 +490,12 @@ Layout.ForceDirected.Point = function(position, mass) {
 	this.v = new Vector(0, 0); // velocity
 	// Based on the usage, the "force" member looks more like an
 	// "acceleration".
-	this.f = new Vector(0, 0); // force
+	this.a = new Vector(0, 0); // force
 };
 
 Layout.ForceDirected.Point.prototype.applyForce = function(force) {
 	// Ditto on acceleration, here: a = F/m
-	this.f = this.f.add(force.divide(this.m));
+	this.a = this.a.add(force.divide(this.m));
 };
 
 // Spring
