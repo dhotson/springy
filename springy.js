@@ -367,7 +367,7 @@ Layout.requestAnimationFrame = __bind(window.requestAnimationFrame ||
 	window.oRequestAnimationFrame ||
 	window.msRequestAnimationFrame ||
 	function(callback, element) {
-		window.setTimeout(callback, interval);
+		window.setTimeout(callback, 10);
 	}, window);
 
 
