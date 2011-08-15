@@ -359,7 +359,7 @@ Layout.ForceDirected.prototype.totalEnergy = function(timestep) {
 	return energy;
 };
 
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }; // stolen from coffeescript, thanks jashkenas! ;-)
 
 Layout.requestAnimationFrame = __bind(window.requestAnimationFrame ||
 	window.webkitRequestAnimationFrame ||
