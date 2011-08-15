@@ -26,36 +26,23 @@ Copyright (c) 2010 Dennis Hotson
 (function() {
 
 jQuery.fn.springy = function(params) {
-    var graph = params.graph;
-    if(!graph){
-        return;
-    }
-    
-    var stiffness = params.stiffness || 400.0;
-    var repulsion = params.repulsion || 400.0;
-    var damping = params.damping || 0.5;
+	this.graph = params.graph || new Graph();
+
+	var stiffness = params.stiffness || 400.0;
+	var repulsion = params.repulsion || 400.0;
+	var damping = params.damping || 0.5;
 
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
-	var layout = new Layout.ForceDirected(graph, stiffness, repulsion, damping);
 
-	// This code is duplicated in springy.js.
-	var requestAnimFrame =
-		window.requestAnimationFrame ||
-		window.webkitRequestAnimationFrame ||
-		window.mozRequestAnimationFrame ||
-		window.oRequestAnimationFrame ||
-		window.msRequestAnimationFrame ||
-		function(callback, element) {
-			window.setTimeout(callback, 10);
-		};
+	var layout = this.layout = new Layout.ForceDirected(graph, stiffness, repulsion, damping);
 
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
 	var targetBB = {bottomleft: new Vector(-2, -2), topright: new Vector(2, 2)};
 
 	// auto adjusting bounding box
-	requestAnimFrame(function adjust(){
+	Layout.requestAnimationFrame(function adjust() {
 		targetBB = layout.getBoundingBox();
 		// current gets 20% closer to target every iteration
 		currentBB = {
@@ -65,7 +52,7 @@ jQuery.fn.springy = function(params) {
 				.divide(10))
 		};
 
-		requestAnimFrame(adjust);
+		Layout.requestAnimationFrame(adjust);
 	});
 
 	// convert to/from screen coordinates
@@ -88,15 +75,14 @@ jQuery.fn.springy = function(params) {
 	var nearest = null;
 	var dragged = null;
 
-	jQuery(canvas).mousedown(function(e){
+	jQuery(canvas).mousedown(function(e) {
 		jQuery('.actions').hide();
 
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
 		selected = nearest = dragged = layout.nearest(p);
 
-		if (selected.node !== null)
-		{
+		if (selected.node !== null) {
 			// Part of the same bug mentioned later. Store the previous mass
 			// before upscaling it for dragging.
 			dragged.point.m = 10000.0;
@@ -105,13 +91,12 @@ jQuery.fn.springy = function(params) {
 		renderer.start();
 	});
 
-	jQuery(canvas).mousemove(function(e){
+	jQuery(canvas).mousemove(function(e) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
 		nearest = layout.nearest(p);
 
-		if (dragged !== null && dragged.node !== null)
-		{
+		if (dragged !== null && dragged.node !== null) {
 			dragged.point.p.x = p.x;
 			dragged.point.p.y = p.y;
 		}
@@ -119,7 +104,7 @@ jQuery.fn.springy = function(params) {
 		renderer.start();
 	});
 
-	jQuery(window).bind('mouseup',function(e){
+	jQuery(window).bind('mouseup',function(e) {
 		// Bug! Node's mass isn't reset on mouseup. Nodes which have been
 		// dragged don't repulse very well. Store the initial mass in mousedown
 		// and then restore it here.
@@ -148,12 +133,10 @@ jQuery.fn.springy = function(params) {
 	};
 
 	var renderer = new Renderer(1, layout,
-		function clear()
-		{
+		function clear() {
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 		},
-		function drawEdge(edge, p1, p2)
-		{
+		function drawEdge(edge, p1, p2) {
 			var x1 = toScreen(p1).x;
 			var y1 = toScreen(p1).y;
 			var x2 = toScreen(p2).x;
@@ -167,18 +150,17 @@ jQuery.fn.springy = function(params) {
 
 			var total = from.length + to.length;
 
+			// Figure out edge's position in relation to other edges between the same nodes
 			var n = 0;
-			for (var i=0; i<from.length; i++)
-			{
-				if (from[i].id === edge.id)
-				{
+			for (var i=0; i<from.length; i++) {
+				if (from[i].id === edge.id) {
 					n = i;
 				}
 			}
 
 			var spacing = 6.0;
 
-			// Figure out how far off centre the line should be drawn
+			// Figure out how far off center the line should be drawn
 			var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
 
 			var s1 = toScreen(p1).add(offset);
@@ -192,7 +174,6 @@ jQuery.fn.springy = function(params) {
 			if (!intersection) {
 				intersection = s2;
 			}
-
 
 			var stroke = typeof(edge.data.color) !== 'undefined' ? edge.data.color : '#000000';
 
@@ -209,12 +190,9 @@ jQuery.fn.springy = function(params) {
 
 			// line
 			var lineEnd;
-			if (directional)
-			{
+			if (directional) {
 				lineEnd = intersection.subtract(direction.normalise().multiply(arrowLength * 0.5));
-			}
-			else
-			{
+			} else {
 				lineEnd = s2;
 			}
 
@@ -226,8 +204,7 @@ jQuery.fn.springy = function(params) {
 
 			// arrow
 
-			if (directional)
-			{
+			if (directional) {
 				ctx.save();
 				ctx.fillStyle = stroke;
 				ctx.translate(intersection.x, intersection.y);
@@ -242,8 +219,7 @@ jQuery.fn.springy = function(params) {
 				ctx.restore();
 			}
 		},
-		function drawNode(node, p)
-		{
+		function drawNode(node, p) {
 			var s = toScreen(p);
 
 			ctx.save();
@@ -255,16 +231,11 @@ jQuery.fn.springy = function(params) {
 			ctx.clearRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
 
 			// fill background
-			if (selected !== null && nearest.node !== null && selected.node.id === node.id)
-			{
+			if (selected !== null && nearest.node !== null && selected.node.id === node.id) {
 				ctx.fillStyle = "#FFFFE0";
-			}
-			else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id)
-			{
+			} else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id) {
 				ctx.fillStyle = "#EEEEEE";
-			}
-			else
-			{
+			} else {
 				ctx.fillStyle = "#FFFFFF";
 			}
 
@@ -284,10 +255,8 @@ jQuery.fn.springy = function(params) {
 
 	renderer.start();
 
-
 	// helpers for figuring out where to draw arrows
-	function intersect_line_line(p1, p2, p3, p4)
-	{
+	function intersect_line_line(p1, p2, p3, p4) {
 		var denom = ((p4.y - p3.y)*(p2.x - p1.x) - (p4.x - p3.x)*(p2.y - p1.y));
 
 		// lines are parallel
@@ -305,8 +274,7 @@ jQuery.fn.springy = function(params) {
 		return new Vector(p1.x + ua * (p2.x - p1.x), p1.y + ua * (p2.y - p1.y));
 	}
 
-	function intersect_line_box(p1, p2, p3, w, h)
-	{
+	function intersect_line_box(p1, p2, p3, w, h) {
 		var tl = {x: p3.x, y: p3.y};
 		var tr = {x: p3.x + w, y: p3.y};
 		var bl = {x: p3.x, y: p3.y + h};
@@ -320,6 +288,8 @@ jQuery.fn.springy = function(params) {
 
 		return false;
 	}
+
+	return this;
 }
 
 })();
