@@ -23,8 +23,7 @@ Copyright (c) 2010 Dennis Hotson
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
-var Graph = function()
-{
+var Graph = function() {
 	this.nodeSet = {};
 	this.nodes = [];
 	this.edges = [];
@@ -35,24 +34,20 @@ var Graph = function()
 	this.eventListeners = [];
 };
 
-var Node = function(id, data)
-{
+var Node = function(id, data) {
 	this.id = id;
 	this.data = typeof(data) !== 'undefined' ? data : {};
 };
 
-var Edge = function(id, source, target, data)
-{
+var Edge = function(id, source, target, data) {
 	this.id = id;
 	this.source = source;
 	this.target = target;
 	this.data = typeof(data) !== 'undefined' ? data : {};
 };
 
-Graph.prototype.addNode = function(node)
-{
-	if (typeof(this.nodeSet[node.id]) === 'undefined')
-	{
+Graph.prototype.addNode = function(node) {
+	if (typeof(this.nodeSet[node.id]) === 'undefined') {
 		this.nodes.push(node);
 	}
 
@@ -62,34 +57,29 @@ Graph.prototype.addNode = function(node)
 	return node;
 };
 
-Graph.prototype.addEdge = function(edge)
-{
+Graph.prototype.addEdge = function(edge) {
 	var exists = false;
-	this.edges.forEach(function(e){
+	this.edges.forEach(function(e) {
 		if (edge.id === e.id) { exists = true; }
 	});
 
-	if (!exists)
-	{
+	if (!exists) {
 		this.edges.push(edge);
 	}
 
-	if (typeof(this.adjacency[edge.source.id]) === 'undefined')
-	{
+	if (typeof(this.adjacency[edge.source.id]) === 'undefined') {
 		this.adjacency[edge.source.id] = {};
 	}
-	if (typeof(this.adjacency[edge.source.id][edge.target.id]) === 'undefined')
-	{
+	if (typeof(this.adjacency[edge.source.id][edge.target.id]) === 'undefined') {
 		this.adjacency[edge.source.id][edge.target.id] = [];
 	}
 
 	exists = false;
-	this.adjacency[edge.source.id][edge.target.id].forEach(function(e){
+	this.adjacency[edge.source.id][edge.target.id].forEach(function(e) {
 			if (edge.id === e.id) { exists = true; }
 	});
 
-	if (!exists)
-	{
+	if (!exists) {
 		this.adjacency[edge.source.id][edge.target.id].push(edge);
 	}
 
@@ -97,26 +87,22 @@ Graph.prototype.addEdge = function(edge)
 	return edge;
 };
 
-Graph.prototype.newNode = function(data)
-{
+Graph.prototype.newNode = function(data) {
 	var node = new Node(this.nextNodeId++, data);
 	this.addNode(node);
 	return node;
 };
 
-Graph.prototype.newEdge = function(source, target, data)
-{
+Graph.prototype.newEdge = function(source, target, data) {
 	var edge = new Edge(this.nextEdgeId++, source, target, data);
 	this.addEdge(edge);
 	return edge;
 };
 
 // find the edges from node1 to node2
-Graph.prototype.getEdges = function(node1, node2)
-{
+Graph.prototype.getEdges = function(node1, node2) {
 	if (typeof(this.adjacency[node1.id]) !== 'undefined'
-		&& typeof(this.adjacency[node1.id][node2.id]) !== 'undefined')
-	{
+		&& typeof(this.adjacency[node1.id][node2.id]) !== 'undefined') {
 		return this.adjacency[node1.id][node2.id];
 	}
 
@@ -124,25 +110,20 @@ Graph.prototype.getEdges = function(node1, node2)
 };
 
 // remove a node and it's associated edges from the graph
-Graph.prototype.removeNode = function(node)
-{
-	if (typeof(this.nodeSet[node.id]) !== 'undefined')
-	{
+Graph.prototype.removeNode = function(node) {
+	if (typeof(this.nodeSet[node.id]) !== 'undefined') {
 		delete this.nodeSet[node.id];
 	}
 
-	for (var i = this.nodes.length - 1; i >= 0; i--)
-	{
-		if (this.nodes[i].id === node.id)
-		{
+	for (var i = this.nodes.length - 1; i >= 0; i--) {
+		if (this.nodes[i].id === node.id) {
 			this.nodes.splice(i, 1);
 		}
 	}
 
 	var tmpEdges = this.edges.slice();
 	tmpEdges.forEach(function(e) {
-		if (e.source.id === node.id || e.target.id === node.id)
-		{
+		if (e.source.id === node.id || e.target.id === node.id) {
 			this.removeEdge(e);
 		}
 	}, this);
@@ -152,26 +133,19 @@ Graph.prototype.removeNode = function(node)
 
 
 // remove a node and it's associated edges from the graph
-Graph.prototype.removeEdge = function(edge)
-{
-	for (var i = this.edges.length - 1; i >= 0; i--)
-	{
-		if (this.edges[i].id === edge.id)
-		{
+Graph.prototype.removeEdge = function(edge) {
+	for (var i = this.edges.length - 1; i >= 0; i--) {
+		if (this.edges[i].id === edge.id) {
 			this.edges.splice(i, 1);
 		}
 	}
 
-	for (var x in this.adjacency)
-	{
-		for (var y in this.adjacency[x])
-		{
+	for (var x in this.adjacency) {
+		for (var y in this.adjacency[x]) {
 			var edges = this.adjacency[x][y];
 
-			for (var j=edges.length - 1; j>=0; j--)
-			{
-				if (this.adjacency[x][y][j].id === edge.id)
-				{
+			for (var j=edges.length - 1; j>=0; j--) {
+				if (this.adjacency[x][y][j].id === edge.id) {
 					this.adjacency[x][y].splice(j, 1);
 				}
 			}
@@ -192,8 +166,7 @@ var o = {
 	]
 }
 */
-Graph.prototype.merge = function(data)
-{
+Graph.prototype.merge = function(data) {
 	var nodes = [];
 	data.nodes.forEach(function(n) {
 		nodes.push(this.addNode(new Node(n.id, n.data)));
@@ -214,36 +187,30 @@ Graph.prototype.merge = function(data)
 	}, this);
 };
 
-Graph.prototype.filterNodes = function(fn)
-{
+Graph.prototype.filterNodes = function(fn) {
 	var tmpNodes = this.nodes.slice();
 	tmpNodes.forEach(function(n) {
-		if (!fn(n))
-		{
+		if (!fn(n)) {
 			this.removeNode(n);
 		}
 	}, this);
 };
 
-Graph.prototype.filterEdges = function(fn)
-{
+Graph.prototype.filterEdges = function(fn) {
 	var tmpEdges = this.edges.slice();
 	tmpEdges.forEach(function(e) {
-		if (!fn(e))
-		{
+		if (!fn(e)) {
 			this.removeEdge(e);
 		}
 	}, this);
 };
 
 
-Graph.prototype.addGraphListener = function(obj)
-{
+Graph.prototype.addGraphListener = function(obj) {
 	this.eventListeners.push(obj);
 };
 
-Graph.prototype.notify = function()
-{
+Graph.prototype.notify = function() {
 	this.eventListeners.forEach(function(obj){
 		obj.graphChanged();
 	});
@@ -251,8 +218,7 @@ Graph.prototype.notify = function()
 
 // -----------
 var Layout = {};
-Layout.ForceDirected = function(graph, stiffness, repulsion, damping)
-{
+Layout.ForceDirected = function(graph, stiffness, repulsion, damping) {
 	this.graph = graph;
 	this.stiffness = stiffness; // spring stiffness constant
 	this.repulsion = repulsion; // repulsion constant
@@ -260,14 +226,10 @@ Layout.ForceDirected = function(graph, stiffness, repulsion, damping)
 
 	this.nodePoints = {}; // keep track of points associated with nodes
 	this.edgeSprings = {}; // keep track of springs associated with edges
-
-	this.intervalId = null;
 };
 
-Layout.ForceDirected.prototype.point = function(node)
-{
-	if (typeof(this.nodePoints[node.id]) === 'undefined')
-	{
+Layout.ForceDirected.prototype.point = function(node) {
+	if (typeof(this.nodePoints[node.id]) === 'undefined') {
 		var mass = typeof(node.data.mass) !== 'undefined' ? node.data.mass : 1.0;
 		this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
 	}
@@ -275,16 +237,14 @@ Layout.ForceDirected.prototype.point = function(node)
 	return this.nodePoints[node.id];
 };
 
-Layout.ForceDirected.prototype.spring = function(edge)
-{
-	if (typeof(this.edgeSprings[edge.id]) === 'undefined')
-	{
+Layout.ForceDirected.prototype.spring = function(edge) {
+	if (typeof(this.edgeSprings[edge.id]) === 'undefined') {
 		var length = typeof(edge.data.length) !== 'undefined' ? edge.data.length : 1.0;
 
 		var existingSpring = false;
 
 		var from = this.graph.getEdges(edge.source, edge.target);
-		from.forEach(function(e){
+		from.forEach(function(e) {
 			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
 				existingSpring = this.edgeSprings[e.id];
 			}
@@ -314,8 +274,7 @@ Layout.ForceDirected.prototype.spring = function(edge)
 };
 
 // callback should accept two arguments: Node, Point
-Layout.ForceDirected.prototype.eachNode = function(callback)
-{
+Layout.ForceDirected.prototype.eachNode = function(callback) {
 	var t = this;
 	this.graph.nodes.forEach(function(n){
 		callback.call(t, n, t.point(n));
@@ -323,8 +282,7 @@ Layout.ForceDirected.prototype.eachNode = function(callback)
 };
 
 // callback should accept two arguments: Edge, Spring
-Layout.ForceDirected.prototype.eachEdge = function(callback)
-{
+Layout.ForceDirected.prototype.eachEdge = function(callback) {
 	var t = this;
 	this.graph.edges.forEach(function(e){
 		callback.call(t, e, t.spring(e));
@@ -332,8 +290,7 @@ Layout.ForceDirected.prototype.eachEdge = function(callback)
 };
 
 // callback should accept one argument: Spring
-Layout.ForceDirected.prototype.eachSpring = function(callback)
-{
+Layout.ForceDirected.prototype.eachSpring = function(callback) {
 	var t = this;
 	this.graph.edges.forEach(function(e){
 		callback.call(t, t.spring(e));
@@ -342,8 +299,7 @@ Layout.ForceDirected.prototype.eachSpring = function(callback)
 
 
 // Physics stuff
-Layout.ForceDirected.prototype.applyCoulombsLaw = function()
-{
+Layout.ForceDirected.prototype.applyCoulombsLaw = function() {
 	this.eachNode(function(n1, point1) {
 		this.eachNode(function(n2, point2) {
 			if (point1 !== point2)
@@ -360,8 +316,7 @@ Layout.ForceDirected.prototype.applyCoulombsLaw = function()
 	});
 };
 
-Layout.ForceDirected.prototype.applyHookesLaw = function()
-{
+Layout.ForceDirected.prototype.applyHookesLaw = function() {
 	this.eachSpring(function(spring){
 		var d = spring.point2.p.subtract(spring.point1.p); // the direction of the spring
 		var displacement = spring.length - d.magnitude();
@@ -373,8 +328,7 @@ Layout.ForceDirected.prototype.applyHookesLaw = function()
 	});
 };
 
-Layout.ForceDirected.prototype.attractToCentre = function()
-{
+Layout.ForceDirected.prototype.attractToCentre = function() {
 	this.eachNode(function(node, point) {
 		var direction = point.p.multiply(-1.0);
 		point.applyForce(direction.multiply(this.repulsion / 50.0));
@@ -382,23 +336,20 @@ Layout.ForceDirected.prototype.attractToCentre = function()
 };
 
 
-Layout.ForceDirected.prototype.updateVelocity = function(timestep)
-{
+Layout.ForceDirected.prototype.updateVelocity = function(timestep) {
 	this.eachNode(function(node, point) {
 		point.v = point.v.add(point.f.multiply(timestep)).multiply(this.damping);
 		point.f = new Vector(0,0);
 	});
 };
 
-Layout.ForceDirected.prototype.updatePosition = function(timestep)
-{
+Layout.ForceDirected.prototype.updatePosition = function(timestep) {
 	this.eachNode(function(node, point) {
 		point.p = point.p.add(point.v.multiply(timestep));
 	});
 };
 
-Layout.ForceDirected.prototype.totalEnergy = function(timestep)
-{
+Layout.ForceDirected.prototype.totalEnergy = function(timestep) {
 	var energy = 0.0;
 	this.eachNode(function(node, point) {
 		var speed = point.v.magnitude();
@@ -408,63 +359,54 @@ Layout.ForceDirected.prototype.totalEnergy = function(timestep)
 	return energy;
 };
 
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+Layout.requestAnimationFrame = __bind(window.requestAnimationFrame ||
+	window.webkitRequestAnimationFrame ||
+	window.mozRequestAnimationFrame ||
+	window.oRequestAnimationFrame ||
+	window.msRequestAnimationFrame ||
+	function(callback, element) {
+		window.setTimeout(callback, interval);
+	}, window);
+
 
 // start simulation
-Layout.ForceDirected.prototype.start = function(interval, render, done)
-{
+Layout.ForceDirected.prototype.start = function(interval, render, done) {
 	var t = this;
 
 	if (this._started) return;
-
 	this._started = true;
 
-	if (this.intervalId !== null) {
-		return; // already running
-	}
-
-	var requestAnimFrame =
-		window.requestAnimationFrame ||
-		window.webkitRequestAnimationFrame ||
-		window.mozRequestAnimationFrame ||
-		window.oRequestAnimationFrame ||
-		window.msRequestAnimationFrame ||
-		function(callback, element) {
-			window.setTimeout(callback, interval);
-		};
-
-	requestAnimFrame(function step() {
+	Layout.requestAnimationFrame(function step() {
 		t.applyCoulombsLaw();
 		t.applyHookesLaw();
 		t.attractToCentre();
 		t.updateVelocity(0.03);
 		t.updatePosition(0.03);
 
-		if (typeof(render) !== 'undefined') { render(); }
+		if (typeof(render) !== 'undefined')
+			render();
 
 		// stop simulation when energy of the system goes below a threshold
-		if (t.totalEnergy() < 0.01)
-		{
+		if (t.totalEnergy() < 0.01) {
 			t._started = false;
 			if (typeof(done) !== 'undefined') { done(); }
-		}
-		else
-		{
-			requestAnimFrame(step);
+		} else {
+			Layout.requestAnimationFrame(step);
 		}
 	});
 };
 
 // Find the nearest point to a particular position
-Layout.ForceDirected.prototype.nearest = function(pos)
-{
+Layout.ForceDirected.prototype.nearest = function(pos) {
 	var min = {node: null, point: null, distance: null};
 	var t = this;
 	this.graph.nodes.forEach(function(n){
 		var point = t.point(n);
 		var distance = point.p.subtract(pos).magnitude();
 
-		if (min.distance === null || distance < min.distance)
-		{
+		if (min.distance === null || distance < min.distance) {
 			min = {node: n, point: point, distance: distance};
 		}
 	});
@@ -473,8 +415,7 @@ Layout.ForceDirected.prototype.nearest = function(pos)
 };
 
 // returns [bottomleft, topright]
-Layout.ForceDirected.prototype.getBoundingBox = function()
-{
+Layout.ForceDirected.prototype.getBoundingBox = function() {
 	var bottomleft = new Vector(-2,-2);
 	var topright = new Vector(2,2);
 
@@ -493,76 +434,64 @@ Layout.ForceDirected.prototype.getBoundingBox = function()
 		}
 	});
 
-	var padding = topright.subtract(bottomleft).multiply(0.07); // 5% padding
+	var padding = topright.subtract(bottomleft).multiply(0.07); // ~5% padding
 
 	return {bottomleft: bottomleft.subtract(padding), topright: topright.add(padding)};
 };
 
 
 // Vector
-Vector = function(x, y)
-{
+Vector = function(x, y) {
 	this.x = x;
 	this.y = y;
 };
 
-Vector.random = function()
-{
+Vector.random = function() {
 	return new Vector(10.0 * (Math.random() - 0.5), 10.0 * (Math.random() - 0.5));
 };
 
-Vector.prototype.add = function(v2)
-{
+Vector.prototype.add = function(v2) {
 	return new Vector(this.x + v2.x, this.y + v2.y);
 };
 
-Vector.prototype.subtract = function(v2)
-{
+Vector.prototype.subtract = function(v2) {
 	return new Vector(this.x - v2.x, this.y - v2.y);
 };
 
-Vector.prototype.multiply = function(n)
-{
+Vector.prototype.multiply = function(n) {
 	return new Vector(this.x * n, this.y * n);
 };
 
-Vector.prototype.divide = function(n)
-{
-	return new Vector((this.x / n) || 0, (this.y / n) || 0);
+Vector.prototype.divide = function(n) {
+	return new Vector((this.x / n) || 0, (this.y / n) || 0); // Avoid divide by zero errors..
 };
 
-Vector.prototype.magnitude = function()
-{
+Vector.prototype.magnitude = function() {
 	return Math.sqrt(this.x*this.x + this.y*this.y);
 };
 
-Vector.prototype.normal = function()
-{
+Vector.prototype.normal = function() {
 	return new Vector(-this.y, this.x);
 };
 
-Vector.prototype.normalise = function()
-{
+Vector.prototype.normalise = function() {
 	return this.divide(this.magnitude());
 };
 
 // Point
-Layout.ForceDirected.Point = function(position, mass)
-{
+Layout.ForceDirected.Point = function(position, mass) {
 	this.p = position; // position
 	this.m = mass; // mass
 	this.v = new Vector(0, 0); // velocity
 	this.f = new Vector(0, 0); // force
 };
 
-Layout.ForceDirected.Point.prototype.applyForce = function(force)
-{
+Layout.ForceDirected.Point.prototype.applyForce = function(force) {
 	this.f = this.f.add(force.divide(this.m));
 };
 
 // Spring
-Layout.ForceDirected.Spring = function(point1, point2, length, k)
-{
+Layout.ForceDirected.Spring = function(point1, point2, length, k) {
 	this.point1 = point1;
 	this.point2 = point2;
 	this.length = length; // spring length at rest
@@ -579,8 +508,7 @@ Layout.ForceDirected.Spring = function(point1, point2, length, k)
 // };
 
 // Renderer handles the layout rendering loop
-function Renderer(interval, layout, clear, drawEdge, drawNode)
-{
+function Renderer(interval, layout, clear, drawEdge, drawNode) {
 	this.interval = interval;
 	this.layout = layout;
 	this.clear = clear;
@@ -590,13 +518,11 @@ function Renderer(interval, layout, clear, drawEdge, drawNode)
 	this.layout.graph.addGraphListener(this);
 }
 
-Renderer.prototype.graphChanged = function(e)
-{
+Renderer.prototype.graphChanged = function(e) {
 	this.start();
 };
 
-Renderer.prototype.start = function()
-{
+Renderer.prototype.start = function() {
 	var t = this;
 	this.layout.start(50, function render() {
 		t.clear();
