@@ -46,6 +46,31 @@ var Edge = function(id, source, target, data) {
 	this.data = typeof(data) !== 'undefined' ? data : {};
 };
 
+/**
+ * Array function to check existence of nodes
+ * Linear search, certainly can be improved :)
+ *
+ * @param Number item the node id to check
+ * @return Boolean
+ */
+Array.prototype.contains = function(item)
+{
+    var exist = false;
+
+    if( typeof(item) !== 'undefined' && this.length > 0 )
+    {
+        var items = this.slice();
+        var i = 0;
+        do
+        {
+            exist = (items[i] == item);
+            i+=1;
+        }while(i <= items.length && !exist);
+    }
+
+    return exist;
+};
+
 Graph.prototype.addNode = function(node) {
 	if (typeof(this.nodeSet[node.id]) === 'undefined') {
 		this.nodes.push(node);
@@ -244,7 +269,133 @@ Graph.prototype.getFirstNode = function(fn)
     return (result.length == 0) ? null : result[0];
 };
 
+/**
+ * Return all nodes ids adjacent to Node
+ *
+ * @param Number nodeId the node id to find its siblings
+ * @return Array the corresponding adjacency entries ids for node
+ */
+Graph.prototype.getAdjacentNodes = function(nodeId)
+{
+    var nodes = new Array();
+    var adjNodes = this.adjacency[nodeId];
 
+    if(typeof(adjNodes) !== 'undefined')
+    {
+        for(var n in adjNodes)
+        {
+            if(typeof(adjNodes[n][0]) !== 'undefined')
+            {
+                nodes.push(n);
+            }
+        }
+    }
+
+    return nodes;
+};
+
+/**
+ * Calculates all paths from one node to another, using a DFS algortihm.
+ * Code taken from: <a href="http://stackoverflow.com/questions/58306/graph-algorithm-to-find-all-connections-between-two-arbitrary-vertices">stackoverflow</a>
+ * Return a copy af the nodes and edges from the original Graph.
+ *
+ * @param Node node1 Starting node
+ * @param Node node2 Ending node
+ * @return Array of Graph Subgraph forming the path
+ */
+Graph.prototype.applyDFS = function(node1, node2)
+{
+	// keep reference of this graph
+    var graph = this;
+    var result = new Array();
+    // contains id of nodes
+    var visited = new Array();
+
+    // visiting the start node
+    visited.push(node1.id);
+    // calling the real function with the
+    // callback to handle the path returned
+    this._recursiveDFS( visited, node2,
+        function(nodeIds){
+
+            var tmpGraph = new Graph();
+            // adding nodes
+            for(var i in nodeIds)
+            {
+                if(typeof(graph.nodes[nodeIds[i]]) !== 'undefined')
+                {
+                    tmpGraph.addNode(graph.nodes[nodeIds[i]]);
+                }
+            }
+
+            var tmpNodes = tmpGraph.nodes.slice();
+            var prev = tmpNodes.shift();
+            for(var i in tmpNodes)
+            {
+                if(typeof(tmpNodes[i]) !== 'undefined')
+                {
+                    // get edges to previous node from current one
+                    edges = graph.getEdges(prev, tmpNodes[i]);
+                    // add them
+                    for(e in edges)
+                    {
+                        if(typeof(edges[e].data) !== 'undefined')
+                        {
+                            tmpGraph.addEdge(edges[e]);
+                        }
+                    }
+                    prev = tmpNodes[i];
+                }
+            }
+            // store the path
+            result.push(tmpGraph);
+        });
+
+    return result;
+};
+
+// real function doing the thing
+Graph.prototype._recursiveDFS = function(visitedNodes, endNode, callback)
+{
+    // get node id from end of visited
+    var nodeId = visitedNodes[visitedNodes.length - 1];
+    var adjNodes = this.getAdjacentNodes(nodeId);
+
+    // examine adjacent nodes
+    for ( var n in adjNodes )
+    {
+        if(typeof(this.nodes[adjNodes[n]]) !== 'undefined')
+        {
+            if (visitedNodes.contains(adjNodes[n]))
+            {
+                continue;
+            }
+
+            // found the target node
+            if (endNode.id == adjNodes[n])
+            {
+                visitedNodes.push(adjNodes[n]);
+                // callback to handle the new path found
+                callback(visitedNodes);
+                visitedNodes.pop();
+                break;
+            }
+        }
+    }
+
+    // in breath-first, recursion needs to come after
+    // visiting adjacent nodes
+    for ( var n in adjNodes )
+    {
+        if (visitedNodes.contains(adjNodes[n]) || endNode.id == adjNodes[n])
+        {
+            continue;
+        }
+        visitedNodes.push(adjNodes[n]);
+        this._recursiveDFS(visitedNodes, endNode, callback);
+        visitedNodes.pop();
+    }
+};
 
 
 Graph.prototype.addGraphListener = function(obj) {
