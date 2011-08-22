@@ -205,6 +205,47 @@ Graph.prototype.filterEdges = function(fn) {
 	}, this);
 };
 
+/**
+ * A SQL like select operation. The function
+ * filter the graph nodes data against some
+ * criteria implemented on it. The function
+ * must return a boolean.
+ *
+ * @param function Callback returning true|false
+ * @return Array of Nodes that mets the conditions
+ */
+Graph.prototype.getNodes = function(fn)
+{
+	var tmpNodes = this.nodes.slice();
+	var result = new Array();
+	this.nodes.forEach(function(e)
+	{
+		if (fn(e))
+		{
+			result.push(e);
+		}
+	}, this);
+
+    return result;
+};
+
+/**
+ * A SQL like select operation, The function
+ * filter the graph nodes data against some
+ * criteria implemented on it. The function
+ * must return a boolean.
+ *
+ * @param function Callback returning true|false
+ * @return Node|null The first Node that mets the conditions
+ */
+Graph.prototype.getFirstNode = function(fn)
+{
+	var result = this.getNodes(fn);
+    return (result.length == 0) ? null : result[0];
+};
+
+
+
 
 Graph.prototype.addGraphListener = function(obj) {
 	this.eventListeners.push(obj);
