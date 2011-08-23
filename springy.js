@@ -126,8 +126,7 @@ Graph.prototype.removeNode = function(node) {
 };
 
 // removes edges associated with a given node
-Graph.prototype.detachNode = function(node)
-{
+Graph.prototype.detachNode = function(node) {
 	var tmpEdges = this.edges.slice();
 	tmpEdges.forEach(function(e) {
 		if (e.source.id === node.id || e.target.id === node.id) {
