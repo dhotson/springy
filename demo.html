@@ -4,7 +4,6 @@
 <script src="springy.js"></script>
 <script src="springyui.js"></script>
 <script>
-
 var graph = new Graph();
 
 var dennis = graph.newNode({label: 'Dennis'});
@@ -29,10 +28,11 @@ graph.newEdge(barbara, timothy, {color: '#6A4A3C'});
 graph.newEdge(dennis, bianca, {color: '#CC333F'});
 graph.newEdge(bianca, monty, {color: '#EB6841'});
 
-jQuery(document).ready(function(){
-	jQuery('#springydemo').springy({ 'graph': graph });
+jQuery(function(){
+	var springy = jQuery('#springydemo').springy({
+		graph: graph
+	});
 });
-
 </script>
 
 <canvas id="springydemo" width="640" height="480" />
