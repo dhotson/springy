@@ -139,6 +139,13 @@ Graph.prototype.removeNode = function(node)
 		}
 	}
 
+	this.detachNode(node);
+
+};
+
+// removes edges associated with a given node
+Graph.prototype.detachNode = function(node)
+{
 	var tmpEdges = this.edges.slice();
 	tmpEdges.forEach(function(e) {
 		if (e.source.id === node.id || e.target.id === node.id)
@@ -149,7 +156,6 @@ Graph.prototype.removeNode = function(node)
 
 	this.notify();
 };
-
 
 // remove a node and it's associated edges from the graph
 Graph.prototype.removeEdge = function(edge)
