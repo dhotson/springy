@@ -488,13 +488,10 @@ Layout.ForceDirected.Point = function(position, mass) {
 	this.p = position; // position
 	this.m = mass; // mass
 	this.v = new Vector(0, 0); // velocity
-	// Based on the usage, the "force" member looks more like an
-	// "acceleration".
-	this.a = new Vector(0, 0); // force
+	this.a = new Vector(0, 0); // acceleration
 };
 
 Layout.ForceDirected.Point.prototype.applyForce = function(force) {
-	// Ditto on acceleration, here: a = F/m
 	this.a = this.a.add(force.divide(this.m));
 };
 
