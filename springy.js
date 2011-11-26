@@ -310,7 +310,7 @@ Layout.ForceDirected.prototype.applyCoulombsLaw = function() {
 			if (point1 !== point2)
 			{
 				var d = point1.p.subtract(point2.p);
-				var distance = d.magnitude() + 1.0;
+				var distance = d.magnitude() + 0.1; // avoid massive forces at small distances (and divide by zero)
 				var direction = d.normalise();
 
 				// apply force to each end point
@@ -343,22 +343,27 @@ Layout.ForceDirected.prototype.attractToCentre = function() {
 
 Layout.ForceDirected.prototype.updateVelocity = function(timestep) {
 	this.eachNode(function(node, point) {
-		point.v = point.v.add(point.f.multiply(timestep)).multiply(this.damping);
-		point.f = new Vector(0,0);
+		// Is this, along with updatePosition below, the only places that your
+		// integration code exist?
+		point.v = point.v.add(point.a.multiply(timestep)).multiply(this.damping);
+		point.a = new Vector(0,0);
 	});
 };
 
 Layout.ForceDirected.prototype.updatePosition = function(timestep) {
 	this.eachNode(function(node, point) {
+		// Same question as above; along with updateVelocity, is this all of
+		// your integration code?
 		point.p = point.p.add(point.v.multiply(timestep));
 	});
 };
 
+// Calculate the total kinetic energy of the system
 Layout.ForceDirected.prototype.totalEnergy = function(timestep) {
 	var energy = 0.0;
 	this.eachNode(function(node, point) {
 		var speed = point.v.magnitude();
-		energy += speed * speed;
+		energy += 0.5 * point.m * speed * speed;
 	});
 
 	return energy;
@@ -488,11 +493,11 @@ Layout.ForceDirected.Point = function(position, mass) {
 	this.p = position; // position
 	this.m = mass; // mass
 	this.v = new Vector(0, 0); // velocity
-	this.f = new Vector(0, 0); // force
+	this.a = new Vector(0, 0); // acceleration
 };
 
 Layout.ForceDirected.Point.prototype.applyForce = function(force) {
-	this.f = this.f.add(force.divide(this.m));
+	this.a = this.a.add(force.divide(this.m));
 };
 
 // Spring
