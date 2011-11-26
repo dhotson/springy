@@ -305,7 +305,7 @@ Layout.ForceDirected.prototype.applyCoulombsLaw = function() {
 			if (point1 !== point2)
 			{
 				var d = point1.p.subtract(point2.p);
-				var distance = d.magnitude();
+				var distance = d.magnitude() + 0.1; // avoid massive forces at small distances (and divide by zero)
 				var direction = d.normalise();
 
 				// apply force to each end point
