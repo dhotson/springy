@@ -218,6 +218,20 @@ jQuery.fn.springy = function(params) {
 				ctx.fill();
 				ctx.restore();
 			}
+
+			// label
+
+			if (typeof(edge.data.label) !== 'undefined') {
+				text = edge.data.label
+				ctx.save();
+				ctx.textAlign = "center";
+				ctx.textBaseline = "top";
+				ctx.font = "10px Helvetica, sans-serif";
+				ctx.fillStyle = "#5BA6EC";
+				ctx.fillText(text, (x1+x2)/2, (y1+y2)/2);
+				ctx.restore();
+			}
+
 		},
 		function drawNode(node, p) {
 			var s = toScreen(p);
