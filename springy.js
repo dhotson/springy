@@ -38,14 +38,14 @@ var Graph = function() {
 
 var Node = function(id, data) {
 	this.id = id;
-	this.data = typeof(data) !== 'undefined' ? data : {};
+	this.data = (data !== undefined) ? data : {};
 };
 
 var Edge = function(id, source, target, data) {
 	this.id = id;
 	this.source = source;
 	this.target = target;
-	this.data = typeof(data) !== 'undefined' ? data : {};
+	this.data = (data !== undefined) ? data : {};
 };
 
 Graph.prototype.addNode = function(node) {
@@ -397,13 +397,14 @@ Layout.ForceDirected.prototype.start = function(render, done) {
 		t.updateVelocity(0.03);
 		t.updatePosition(0.03);
 
-		if (typeof(render) !== 'undefined')
+		if (render !== undefined) {
 			render();
+                }
 
 		// stop simulation when energy of the system goes below a threshold
 		if (t.totalEnergy() < 0.01) {
 			t._started = false;
-			if (typeof(done) !== 'undefined') { done(); }
+			if (done !== undefined) { done(); }
 		} else {
 			Layout.requestAnimationFrame(step);
 		}
