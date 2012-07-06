@@ -1,5 +1,5 @@
 /**
- * Springy v1.0.1
+ * Springy v1.1.0
  *
  * Copyright (c) 2010 Dennis Hotson
  *
@@ -39,13 +39,23 @@ var Graph = function() {
 var Node = function(id, data) {
 	this.id = id;
 	this.data = (data !== undefined) ? data : {};
+
+// Data fields used by layout algorithm in this file:
+//   	this.data.mass 
+// Data used by default renderer in springyui.js
+//   	this.data.label
 };
 
 var Edge = function(id, source, target, data) {
 	this.id = id;
+        /** @type {Node} */
 	this.source = source;
 	this.target = target;
 	this.data = (data !== undefined) ? data : {};
+
+// Edge data field used by layout alorithm
+//   	this.data.length
+//   	this.data.type
 };
 
 Graph.prototype.addNode = function(node) {
@@ -57,6 +67,15 @@ Graph.prototype.addNode = function(node) {
 
 	this.notify();
 	return node;
+};
+
+Graph.prototype.addNodes = function(list) {
+        if (typeof(list[0]) == "string") {
+		list.forEach(function(name) {
+                    var node = new Node(name, data = {label:name});
+                    this.addNode(node);
+                }, this);
+        }
 };
 
 Graph.prototype.addEdge = function(edge) {
