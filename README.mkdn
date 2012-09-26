@@ -97,5 +97,5 @@ feedback.
 Additions
 ----
 
-In this forked version, there will be a callback function for the mouseclick, with
-the nearest node as parameter. (As of yet, it's not implemented.)
+This forked version adds a callback (called `nodeSelected` in the jquery
+initializer. This callback is passed the node object.
