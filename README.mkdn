@@ -93,3 +93,9 @@ Acknowledgements
 
 Thanks to [Lachlan Donald](http://github.com/lox) for his helpful suggestions and
 feedback.
+
+Additions
+----
+
+In this forked version, there will be a callback function for the mouseclick, with
+the nearest node as parameter. (As of yet, it's not implemented.)
