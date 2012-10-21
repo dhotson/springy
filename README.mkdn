@@ -93,9 +93,3 @@ Acknowledgements
 
 Thanks to [Lachlan Donald](http://github.com/lox) for his helpful suggestions and
 feedback.
-
-Additions
-----
-
-This forked version adds a callback (called `nodeSelected` in the jquery
-initializer. This callback is passed the node object.

@@ -31,7 +31,6 @@ jQuery.fn.springy = function(params) {
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
-	
 	var nodeSelected = params.nodeSelected || null;
 
 	var canvas = this[0];
@@ -88,9 +87,10 @@ jQuery.fn.springy = function(params) {
 			// Part of the same bug mentioned later. Store the previous mass
 			// before upscaling it for dragging.
 			dragged.point.m = 10000.0;
-			
-			// Call the nodeSelected code passed during initialization
-			nodeSelected(selected.node);
+
+			if (nodeSelected) {
+				nodeSelected(selected.node);
+			}
 		}
 
 		renderer.start();
