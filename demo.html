@@ -30,7 +30,10 @@ graph.newEdge(bianca, monty, {color: '#EB6841'});
 
 jQuery(function(){
 	var springy = jQuery('#springydemo').springy({
-		graph: graph
+		graph: graph,
+		nodeSelected: function(node){
+			console.log('Node selected: ' + JSON.stringify(node.data));
+		}
 	});
 });
 </script>
