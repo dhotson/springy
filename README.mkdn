@@ -57,7 +57,7 @@ This is the basic graph API, you can create nodes and edges etc.
 
 So now to draw this graph, lets make a layout object:
 
-    var layout = new Layout.ForceDirected(graph, 400.0, 400.0, 0.5);
+    var layout = new Springy.Layout.ForceDirected(graph, 400.0, 400.0, 0.5);
 
 I've written a Renderer class, which will handle the rendering loop.
 You just need to provide some callbacks to do the actual drawing.
