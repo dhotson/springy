@@ -46,7 +46,7 @@ things before you get started.
 This is the basic graph API, you can create nodes and edges etc.
 
     // make a new graph
-    var graph = new Graph();
+    var graph = new Springy.Graph();
 
     // make some nodes
     var node1 = graph.newNode({label: '1'});
@@ -62,7 +62,7 @@ So now to draw this graph, lets make a layout object:
 I've written a Renderer class, which will handle the rendering loop.
 You just need to provide some callbacks to do the actual drawing.
 
-    var renderer = new Renderer(10, layout,
+    var renderer = new Springy.Renderer(10, layout,
       function clear() {
         // code to clear screen
       },
