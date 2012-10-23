@@ -24,6 +24,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+ 
+ /* Sreejesh Karunakaran
+    Updated to wrap under the namespace Srpingy
+    
+ */
+ 
 (function(Springy){
     /* 
         The Graph Class
