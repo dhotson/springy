@@ -80,12 +80,12 @@
             return edge;
         },
         newNode: function(data) {
-            var node = new Node(this.nextNodeId++, data);
+            var node = new Springy.Node(this.nextNodeId++, data);
             this.addNode(node);
             return node;
         },
         newEdge: function(source, target, data) {
-            var edge = new Edge(this.nextEdgeId++, source, target, data);
+            var edge = new Springy.Edge(this.nextEdgeId++, source, target, data);
             this.addEdge(edge);
             return edge;
         },
@@ -160,7 +160,7 @@
         merge: function(data) {
             var nodes = [];
             data.nodes.forEach(function(n) {
-                nodes.push(this.addNode(new Node(n.id, n.data)));
+                nodes.push(this.addNode(new Springy.Node(n.id, n.data)));
             }, this);
 
             data.edges.forEach(function(e) {
@@ -173,7 +173,7 @@
                         ? e.type + "-" + from.id + "-" + to.id
                         : e.type + "-" + to.id + "-" + from.id;
 
-                var edge = this.addEdge(new Edge(id, from, to, e.data));
+                var edge = this.addEdge(new Springy.Edge(id, from, to, e.data));
                 edge.data.type = e.type;
             }, this);
         },
@@ -225,7 +225,7 @@
 
     var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }; // stolen from coffeescript, thanks jashkenas! ;-)
 
-    Layout.requestAnimationFrame = __bind(window.requestAnimationFrame ||
+    Springy.Layout.requestAnimationFrame = __bind(window.requestAnimationFrame ||
         window.webkitRequestAnimationFrame ||
         window.mozRequestAnimationFrame ||
         window.oRequestAnimationFrame ||
@@ -267,7 +267,7 @@
         point : function(node) {
             if (typeof(this.nodePoints[node.id]) === 'undefined') {
                 var mass = typeof(node.data.mass) !== 'undefined' ? node.data.mass : 1.0;
-                this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
+                this.nodePoints[node.id] = new Springy.Layout.ForceDirected.Point(Springy.Vector.random(), mass);
             }
 
             return this.nodePoints[node.id];
@@ -286,7 +286,7 @@
                 }, this);
 
                 if (existingSpring !== false) {
-                    return new Layout.ForceDirected.Spring(existingSpring.point1, existingSpring.point2, 0.0, 0.0);
+                    return new Springy.Layout.ForceDirected.Spring(existingSpring.point1, existingSpring.point2, 0.0, 0.0);
                 }
 
                 var to = this.graph.getEdges(edge.target, edge.source);
@@ -297,10 +297,10 @@
                 }, this);
 
                 if (existingSpring !== false) {
-                    return new Layout.ForceDirected.Spring(existingSpring.point2, existingSpring.point1, 0.0, 0.0);
+                    return new Springy.Layout.ForceDirected.Spring(existingSpring.point2, existingSpring.point1, 0.0, 0.0);
                 }
 
-                this.edgeSprings[edge.id] = new Layout.ForceDirected.Spring(
+                this.edgeSprings[edge.id] = new Springy.Layout.ForceDirected.Spring(
                     this.point(edge.source), this.point(edge.target), length, this.stiffness
                 );
             }
@@ -364,7 +364,7 @@
                 // Is this, along with updatePosition below, the only places that your
                 // integration code exist?
                 point.v = point.v.add(point.a.multiply(timestep)).multiply(this.damping);
-                point.a = new Vector(0,0);
+                point.a = new Springy.Vector(0,0);
             });
         },
         updatePosition: function(timestep) {
@@ -389,7 +389,7 @@
             if (this._started) return;
             this._started = true;
 
-            Layout.requestAnimationFrame(function step() {
+            Springy.Layout.requestAnimationFrame(function step() {
                 t.applyCoulombsLaw();
                 t.applyHookesLaw();
                 t.attractToCentre();
@@ -404,7 +404,7 @@
                     t._started = false;
                     if (typeof(done) !== 'undefined') { done(); }
                 } else {
-                    Layout.requestAnimationFrame(step);
+                    Springy.Layout.requestAnimationFrame(step);
                 }
             });
         },
@@ -423,8 +423,8 @@
             return min;
         },
         getBoundingBox: function() {
-            var bottomleft = new Vector(-2,-2);
-            var topright = new Vector(2,2);
+            var bottomleft = new Springy.Vector(-2,-2);
+            var topright = new Springy.Vector(2,2);
 
             this.eachNode(function(n, point) {
                 if (point.p.x < bottomleft.x) {
@@ -451,8 +451,8 @@
     Springy.Layout.ForceDirected.Point = function(position, mass) {
         this.p = position; // position
         this.m = mass; // mass
-        this.v = new Vector(0, 0); // velocity
-        this.a = new Vector(0, 0); // acceleration
+        this.v = new Springy.Vector(0, 0); // velocity
+        this.a = new Springy.Vector(0, 0); // acceleration
     };
 
     Springy.Layout.ForceDirected.Point.prototype.applyForce = function(force) {
@@ -467,27 +467,27 @@
     };
 
     Springy.Vector.random = function() {
-        return new Vector(10.0 * (Math.random() - 0.5), 10.0 * (Math.random() - 0.5));
+        return new Springy.Vector(10.0 * (Math.random() - 0.5), 10.0 * (Math.random() - 0.5));
     };
 
     Springy.Vector.prototype = {
         add: function(v2) {
-            return new Vector(this.x + v2.x, this.y + v2.y);
+            return new Springy.Vector(this.x + v2.x, this.y + v2.y);
         },
         subtract: function(v2) {
-            return new Vector(this.x - v2.x, this.y - v2.y);
+            return new Springy.Vector(this.x - v2.x, this.y - v2.y);
         },
         multiply: function(n) {
-            return new Vector(this.x * n, this.y * n);
+            return new Springy.Vector(this.x * n, this.y * n);
         },
         divide: function(n) {
-            return new Vector((this.x / n) || 0, (this.y / n) || 0); // Avoid divide by zero errors..
+            return new Springy.Vector((this.x / n) || 0, (this.y / n) || 0); // Avoid divide by zero errors..
         },
         magnitude: function() {
             return Math.sqrt(this.x*this.x + this.y*this.y);
         },
         normal: function() {
-            return new Vector(-this.y, this.x);
+            return new Springy.Vector(-this.y, this.x);
         },
         normalise: function() {
             return this.divide(this.magnitude());   
