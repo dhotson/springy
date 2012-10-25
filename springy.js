@@ -25,7 +25,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
  
- /* Sreejesh Karunakaran
+ /** Sreejesh Karunakaran
     Updated to wrap under the namespace Srpingy
     
  */
@@ -301,8 +301,8 @@
         window.mozRequestAnimationFrame ||
         window.oRequestAnimationFrame ||
         window.msRequestAnimationFrame ||
-        function(callback, element) {
-            window.setTimeout(callback, 10);
+        function(callback, interval, element) {
+            window.setTimeout(callback, interval || 10);
         }, window);
 
         
@@ -464,20 +464,24 @@
                 t.applyCoulombsLaw();
                 t.applyHookesLaw();
                 t.attractToCentre();
-                t.updateVelocity(0.03);
-                t.updatePosition(0.03);
+                t.updateVelocity(0.05);
+                t.updatePosition(0.05);
 
-                if (typeof(render) !== 'undefined')
-                    render();
+      
 
                 // stop simulation when energy of the system goes below a threshold
                 if (t.totalEnergy() < 0.01) {
                     t._started = false;
+                    
+                    if (typeof(render) !== 'undefined'){
+                        render();
+                    }
                     if (typeof(done) !== 'undefined') { done(); }
+                        
                 } else {
                     Springy.Layout.requestAnimationFrame(step);
                 }
-            });
+            },interval);
         },
         nearest: function(pos) {
             var min = {node: null, point: null, distance: null};
