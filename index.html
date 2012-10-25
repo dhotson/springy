@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Springy - A force directed graph layout algorithm in JavaScript.</title>
+  <link href='http://fonts.googleapis.com/css?family=IM+Fell+English+SC|IM+Fell+English:400,400italic' rel='stylesheet' type='text/css'>
+  <script src="springy.js"></script>
+  <style>
+    body {
+      background: #FFF;
+      font-family: 'IM Fell English', serif;
+      font-size: 18px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    h1 {
+      font-weight: normal;
+      font-size: 48px;
+      font-family: 'IM Fell English SC', serif;
+    }
+
+    .subtitle {
+      font-size: 24px;
+      font-style: italic;
+    }
+
+    h2 {
+      font-weight: normal;
+      font-size: 32px;
+      font-family: 'IM Fell English SC', serif;
+      margin-top: 0;
+    }
+
+    .section {
+      width: 650px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .divider {
+      margin: 30px 0;
+      text-align: center;
+    }
+
+    .example {
+      box-sizing: border-box;
+      background: #EEEEEE;
+      box-shadow: 0 0 50px 0 rgba(0,0,0,0.2) inset;
+    }
+
+    pre {
+      font-family: monospace;
+      background: #EEEEEE;
+      padding: 15px;
+    }
+    .Function { font-weight: bold; }
+    .Normal { font-weight: bold; }
+    .Identifier { font-weight: bold; }
+    .Comment { color: #808080; }
+  </style>
+</head>
+<body>
+  <h1>Springy.js</h1>
+  <p class="subtitle">A force directed graph layout algorithm for JavaScript.</p>
+
+  <div class="divider"><img src="branch.png" align="top" /></div>
+  <div id="what" class="section">
+    <h2>What is Springy?</h2>
+    <p>Springy is a force directed graph layout algorithm.</p>
+    <p>So what does this &ldquo;force directed&rdquo; stuff mean anyway? Excellent question!</p>
+    <p>It basically means that it uses some real world physics to try and figure out how to show a network graph in a nice way.</p>
+    <p>Here's an example:</p>
+    <canvas id="adv" class="example" width="650" height="300"></canvas>
+    <p>You can imagine it as a bunch of springs connected to each other.</p>
+  </div>
+
+  <script>
+(function() {
+  // make a new graph
+  var graph = new Graph();
+
+  // make some nodes
+  var node1 = graph.newNode({label: 'Norway Spruce'});
+  var node2 = graph.newNode({label: 'Sicilian Fir'});
+  var node3 = graph.newNode({label: 'Sumatran Pine'});
+  var node4 = graph.newNode({label: 'Japanese Larch'});
+
+  // connect them with an edge
+  graph.newEdge(node1, node2);
+  graph.newEdge(node2, node3);
+  graph.newEdge(node2, node4);
+  graph.newEdge(node1, node4);
+
+  var layout = new Layout.ForceDirected(
+    graph,
+    200.0, // Spring stiffness
+    400.0, // Node repulsion
+    0.5 // Damping
+  );
+
+  var canvas = document.getElementById('adv');
+  var ctx = canvas.getContext('2d');
+
+  var renderer = new Renderer(10, layout,
+    function clear() {
+      ctx.clearRect(0, 0, 650, 300);
+    },
+    function drawEdge(edge, p1, p2) {
+      ctx.save();
+      ctx.translate(325, 150);
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 3.0;
+
+      ctx.beginPath();
+      ctx.moveTo(p1.x * 50, p1.y * 40);
+      ctx.lineTo(p2.x * 50, p2.y * 40);
+      ctx.stroke();
+
+      ctx.restore();
+    },
+    function drawNode(node, p) {
+      ctx.save();
+      ctx.translate(325, 150);
+
+      ctx.font = "18px 'IM Fell English', serif";
+
+      var width = ctx.measureText(node.data.label).width;
+      var x = p.x * 50;
+      var y = p.y * 40;
+      ctx.clearRect(x - width / 2.0 - 5, y - 12, width + 10, 24);
+      ctx.fillStyle = '#000000';
+      ctx.fillText(node.data.label, x - width / 2.0, y + 5);
+
+      ctx.restore();
+    }
+  );
+
+  renderer.start();
+})()
+  </script>
+  <div class="divider"><img src="pine.png" /></div>
+
+  <div id="usage" class="section">
+    <h2>Basic usage</h2>
+    <p>springy.js by itself is quite plain and doesn't include any code to do rendering or drag and drop etc. It's just for calculating the layout.</p>
+    <p>The drawing and interaction stuff is mostly up to you.</p>
+    <p>However, I've written a little helper jQuery plugin called springyui.js to help get you started. It's got a semi-decent default renderer and some half assed drag and drop.</p>
+    <p>Take a look at <a href="#">demo.html</a> and <a href="#">springyui.js</a> for an example of usage.</p>
+  </div>
+
+  <div class="divider"><img src="nut.png" /></div>
+
+  <div id="usage" class="section">
+    <h2>Advanced usage</h2>
+    <p>If you're keen to do your own custom drawing, you'll need to know a few things before you get started.</p>
+    <p>This is the basic graph API, you can create nodes and edges etc.</p>
+<pre>
+<span class="Comment">// make a new graph</span>
+<span class="Identifier">var</span> graph = <span class="Normal">new</span> Graph();
+
+<span class="Comment">// make some nodes</span>
+<span class="Identifier">var</span> node1 = graph.newNode(<span class="Function">{</span>label: <span class="String">'Norway Spruce'</span><span class="Function">}</span>);
+<span class="Identifier">var</span> node2 = graph.newNode(<span class="Function">{</span>label: <span class="String">'Sicilian Fir'</span><span class="Function">}</span>);
+
+<span class="Comment">// connect them with an edge</span>
+graph.newEdge(node1, node2);
+</pre>
+
+    <p>So now to draw this graph, lets make a layout object:</p>
+<pre>
+<span class="Identifier">var</span> layout = <span class="Normal">new</span> Layout.ForceDirected(
+  graph,
+  <span class="Constant">400</span>.<span class="Constant">0</span>, <span class="Comment">// Spring stiffness</span>
+  <span class="Constant">400</span>.<span class="Constant">0</span>, <span class="Comment">// Node repulsion</span>
+  <span class="Constant">0</span>.<span class="Constant">5</span> <span class="Comment">// Damping</span>
+);
+</pre>
+    <p>I've written a Renderer class, which will handle the rendering loop. You just need to provide some callbacks to do the actual drawing.</p>
+<pre>
+<span class="Identifier">var</span> renderer = <span class="Normal">new</span> Renderer(<span class="Constant">10</span>, layout,
+  <span class="Function">function</span> clear() <span class="Function">{</span>
+    <span class="Comment">// code to clear screen</span>
+  <span class="Function">}</span>,
+  <span class="Function">function</span> drawEdge(edge, p1, p2) <span class="Function">{</span>
+    <span class="Comment">// draw an edge</span>
+  <span class="Function">}</span>,
+  <span class="Function">function</span> drawNode(node, p) <span class="Function">{</span>
+    <span class="Comment">// draw a node</span>
+  <span class="Function">}</span>
+);
+</pre>
+
+  <p>Now, just start the rendering loop:</p>
+
+<pre>
+renderer.start();
+</pre>
+
+  <div class="divider"><img src="cone.png" /></div>
+
+  <div id="usage" class="section">
+    <h2>Acknowledgements</h2>
+  </div>
+
+  <div class="divider"><img src="dome.png" /></div>
+</body>
+
