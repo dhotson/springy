@@ -36,6 +36,10 @@
       margin-top: 0;
     }
 
+    h3 {
+      font-size: 18px;
+    }
+
     .section {
       width: 650px;
       margin: 0 auto;
@@ -167,7 +171,11 @@
   <div id="usage" class="section">
     <h2>Usage</h2>
 
-    <p>Here's how you create a graph and add nodes and edges:</p>
+    <p>Springy.js is designed to be small and simple. It provides an abstraction for graph manipulation and for calculating the layout and not too much else.</p>
+    <p>The details of drawing and interaction are mostly up to you. This means you can use canvas, SVG, WebGL, or even just plain old positioned HTML elements.</p>
+
+    <h3>Creating a graph</h3>
+    <p>Here's how to create a graph and add nodes and edges:</p>
 <pre>
 <span class="Comment">// make a new graph</span>
 <span class="Identifier">var</span><span class="Special"> graph = </span><span class="Normal">new</span><span class="Special"> Graph</span>()<span class="Special">;</span>
@@ -180,9 +188,10 @@
 <span class="Special">graph.newEdge</span>(<span class="Special">spruce, fir</span>)<span class="Special">;</span>
 </pre>
 
-    <p>Once you've created your graph, there are a couple of options for displaying it.</p>
+    <p>Once you've created a graph, there are a couple of options for displaying it.</p>
 
-    <p>To help get started quickly, I've included a helper jQuery plugin included called springyui.js. It's got a semi&#8209;decent default renderer and some half&#8209;assed drag and drop.</p>
+    <h3>Use the springyui.js renderer</h3>
+    <p>To help get started quickly, I've included a helper jQuery plugin called springyui.js. It's got a semi&#8209;decent default renderer and some half&#8209;assed drag and drop.</p>
 
     <p>Here's how to use springyui.js:</p>
 
@@ -193,7 +202,7 @@
 <span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span>
 </pre>
 
-    <h2>Advanced usage</h2>
+    <h3>Do your own rendering</h3>
     <p>If you're keen to do your own custom drawing or interaction&mdash;there's a few extra things you'll need to know.</p>
 
     <p>The core Springy layout algorithm is in the Layout.ForceDirected class.</p>
@@ -231,7 +240,7 @@
 renderer.start();
 </pre>
 
-    <p><b>Protip:</b> Take a look at the source code of springyui.js to get an idea of how to write your own renderer&mdash;it's a good place to start. Feel free to copy&#8209;paste what you need.</p>
+    <p><b>Protip:</b> Take a look at the source code of <a href="https://github.com/dhotson/springy/blob/master/springyui.js">springyui.js</a> to get an idea of how to write your own renderer&mdash;it's a good place to start. Feel free to copy&#8209;paste what you need.</p>
   </div>
 
   <div class="divider"><img src="pinus_serotina.png" alt="Pinus serotina" title="Pinus serotina" /></div>
@@ -250,10 +259,15 @@ renderer.start();
     <p>Springy is licensed under the <a href="https://github.com/dhotson/springy/blob/master/LICENSE">MIT</a> license.</p>
   </div>
 
+  <div id="contributions" class="section">
+    <h2>Contributing</h2>
+    <p>Contributions are welcome and highly encouraged. Please submit a pull request for fixes, features or enhancements.</p>
+  </div>
+
   <div id="acknowledgements" class="section">
     <h2>Acknowledgements</h2>
     <p>Thanks to <a href="https://github.com/lox">Lachlan Donald</a> for his helpful suggestions and feedback.</p>
-    <p>Thanks to <a href="http://en.wikipedia.org/wiki/Ernst_Haeckel">Ernst Haeckel</a> for the beautiful illustrations of Coniferae.</p>
+    <p>Thanks to <a href="http://en.wikipedia.org/wiki/Ernst_Haeckel">Ernst Haeckel</a> for the <a href="http://www.flickr.com/photos/origomi/sets/72157601323433758/">beautiful illustrations</a> of various <a href="http://en.wikipedia.org/wiki/Pinophyta">Coniferae</a>.</p>
   </div>
 
   <div class="divider"><img src="araucaria_brasiliana.png" alt="Araucaria brasiliana" title="Araucaria brasiliana" /></div>
