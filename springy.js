@@ -411,7 +411,7 @@ Layout.requestAnimationFrame = __bind(window.requestAnimationFrame ||
 
 
 // start simulation
-Layout.ForceDirected.prototype.start = function(interval, render, done) {
+Layout.ForceDirected.prototype.start = function(render, done) {
 	var t = this;
 
 	if (this._started) return;
@@ -547,8 +547,7 @@ Layout.ForceDirected.Spring = function(point1, point2, length, k) {
 // };
 
 // Renderer handles the layout rendering loop
-function Renderer(interval, layout, clear, drawEdge, drawNode) {
-	this.interval = interval;
+function Renderer(layout, clear, drawEdge, drawNode) {
 	this.layout = layout;
 	this.clear = clear;
 	this.drawEdge = drawEdge;
@@ -563,7 +562,7 @@ Renderer.prototype.graphChanged = function(e) {
 
 Renderer.prototype.start = function() {
 	var t = this;
-	this.layout.start(50, function render() {
+	this.layout.start(function render() {
 		t.clear();
 
 		t.layout.eachEdge(function(edge, spring) {
