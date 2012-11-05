@@ -12,7 +12,11 @@
       font-size: 18px;
       line-height: 1.4;
       text-align: center;
+      margin-bottom: 120px;
     }
+
+    a:link { color: #0000AA; }
+    a:visited { color: #660066; }
 
     h1 {
       font-weight: normal;
@@ -39,7 +43,7 @@
     }
 
     .divider {
-      margin: 30px 0;
+      margin: 2em 0;
       text-align: center;
     }
 
@@ -59,7 +63,7 @@
       -webkit-border-radius: 10px;
       -moz-border-radius: 10px;
       border-radius: 10px;
-      padding: 15px;
+      padding: 1em;
     }
     .Function { font-weight: bold; }
     .Normal { font-weight: bold; }
@@ -69,22 +73,29 @@
 </head>
 <body>
   <h1>Springy.js</h1>
-  <p class="subtitle">A force directed graph layout algorithm for JavaScript.</p>
+  <p class="subtitle">A force directed graph layout algorithm in JavaScript.</p>
 
   <div class="divider"><img src="chamaecyparis_obtusa.png" alt="Chamaecyparis obtusa" title="Chamaecyparis obtusa" /></div>
 
-  <p><a href="https://github.com/dhotson/springy/">GitHub</a> | <a href="demo.html">Demo</a> | <a href="mailto:dennis.hotson@gmail.com">Contact</a></p>
+  <p>
+    <a href="demo.html">Demo</a> |
+    <a href="https://github.com/dhotson/springy/zipball/master">Download</a> |
+    <a href="#usage">Usage</a> |
+    <a href="https://github.com/dhotson/springy/">GitHub</a> |
+    <a href="mailto:dennis.hotson@gmail.com">Contact</a>
+  </p>
 
   <div id="what" class="section">
     <h2>What is Springy?</h2>
     <p>Springy is a force directed graph layout algorithm.</p>
-    <p>So what does this &ldquo;force directed&rdquo; stuff mean anyway? Excellent question!</p>
-    <p>It basically means that it uses some real world physics to try and figure out how to show a network graph in a nice way.</p>
+    <p>So what does this &ldquo;force directed&rdquo; stuff mean anyway? <i>Excellent question!</i></p>
+    <p>It means that springy uses some real world physics to try and figure out how to show a network graph in a way that looks good.</p>
     <p>Here's an example:</p>
-    <canvas id="adv" class="example" width="650" height="300"></canvas>
-    <p>You can imagine it as a bunch of springs connected to each other.</p>
+
+    <canvas id="demo" class="example" width="650" height="300"></canvas>
   </div>
 
+  <!-- Here's a Springy worked example right here in the source. Enjoy! :-) -->
   <script>
 (function() {
   // make a new graph
@@ -109,7 +120,7 @@
     0.5 // Damping
   );
 
-  var canvas = document.getElementById('adv');
+  var canvas = document.getElementById('demo');
   var ctx = canvas.getContext('2d');
 
   var renderer = new Renderer(10, layout,
@@ -120,7 +131,7 @@
       ctx.save();
       ctx.translate(325, 150);
 
-      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
       ctx.lineWidth = 3.0;
 
       ctx.beginPath();
@@ -134,7 +145,7 @@
       ctx.save();
       ctx.translate(325, 150);
 
-      ctx.font = "18px 'IM Fell English', serif";
+      ctx.font = "18px 'IM Fell English', 'Times New Roman', serif";
 
       var width = ctx.measureText(node.data.label).width;
       var x = p.x * 50;
@@ -150,35 +161,43 @@
   renderer.start();
 })()
   </script>
+
   <div class="divider"><img src="sequoya_gigantea.png" alt="Sequoya gigantea" title="Sequoya gigantea" /></div>
 
   <div id="usage" class="section">
-    <h2>Basic usage</h2>
-    <p>springy.js by itself is quite plain and doesn't include any code to do rendering or drag and drop etc. It's just for calculating the layout.</p>
-    <p>The drawing and interaction stuff is mostly up to you.</p>
-    <p>However, I've written a little helper jQuery plugin called springyui.js to help get you started. It's got a semi-decent default renderer and some half assed drag and drop.</p>
-    <p>Take a look at <a href="#">demo.html</a> and <a href="#">springyui.js</a> for an example of usage.</p>
-  </div>
+    <h2>Usage</h2>
 
-  <div class="divider"><img src="cupressus_sempervirens.png" alt="Cupressus sempervirens" title="Cupressus sempervirens" /></div>
-
-  <div id="usage" class="section">
-    <h2>Advanced usage</h2>
-    <p>If you're keen to do your own custom drawing, you'll need to know a few things before you get started.</p>
-    <p>This is the basic graph API, you can create nodes and edges etc.</p>
+    <p>Here's how you create a graph and add nodes and edges:</p>
 <pre>
 <span class="Comment">// make a new graph</span>
-<span class="Identifier">var</span> graph = <span class="Normal">new</span> Graph();
+<span class="Identifier">var</span><span class="Special"> graph = </span><span class="Normal">new</span><span class="Special"> Graph</span>()<span class="Special">;</span>
 
 <span class="Comment">// make some nodes</span>
-<span class="Identifier">var</span> node1 = graph.newNode(<span class="Function">{</span>label: <span class="String">'Norway Spruce'</span><span class="Function">}</span>);
-<span class="Identifier">var</span> node2 = graph.newNode(<span class="Function">{</span>label: <span class="String">'Sicilian Fir'</span><span class="Function">}</span>);
+<span class="Identifier">var</span><span class="Special"> spruce = graph.newNode</span>(<span class="Function">{</span><span class="Special">label: </span><span class="String">'Norway Spruce'</span><span class="Function">}</span>)<span class="Special">;</span>
+<span class="Identifier">var</span><span class="Special"> fir = graph.newNode</span>(<span class="Function">{</span><span class="Special">label: </span><span class="String">'Sicilian Fir'</span><span class="Function">}</span>)<span class="Special">;</span>
 
 <span class="Comment">// connect them with an edge</span>
-graph.newEdge(node1, node2);
+<span class="Special">graph.newEdge</span>(<span class="Special">spruce, fir</span>)<span class="Special">;</span>
 </pre>
 
-    <p>So now to draw this graph, lets make a layout object:</p>
+    <p>Once you've created your graph, there are a couple of options for displaying it.</p>
+
+    <p>To help get started quickly, I've included a helper jQuery plugin included called springyui.js. It's got a semi&#8209;decent default renderer and some half&#8209;assed drag and drop.</p>
+
+    <p>Here's how to use springyui.js:</p>
+
+<pre>
+<span class="Function">&lt;</span><span class="Statement">canvas</span><span class="Function"> </span><span class="Type">id</span><span class="Function">=</span><span class="String">&quot;my_canvas&quot;</span><span class="Function"> </span><span class="Type">width</span><span class="Function">=</span><span class="String">&quot;600&quot;</span><span class="Function"> </span><span class="Type">height</span><span class="Function">=</span><span class="String">&quot;400&quot;</span><span class="Function"> /&gt;</span>
+<span class="Function">&lt;</span><span class="Statement">script</span><span class="Function">&gt;</span>
+<span class="Special">$</span>(<span class="String">'#my_canvas'</span>)<span class="Special">.springy</span>(<span class="Function">{</span><span class="Special"> graph: graph </span><span class="Function">}</span>)<span class="Special">;</span>
+<span class="Identifier">&lt;/</span><span class="Statement">script</span><span class="Identifier">&gt;</span>
+</pre>
+
+    <h2>Advanced usage</h2>
+    <p>If you're keen to do your own custom drawing or interaction&mdash;there's a few extra things you'll need to know.</p>
+
+    <p>The core Springy layout algorithm is in the Layout.ForceDirected class.</p>
+    <p>When creating a layout object, there are a few parameters you can tune to make the graph layout algorithm behave how you like:</p>
 <pre>
 <span class="Identifier">var</span> layout = <span class="Normal">new</span> Layout.ForceDirected(
   graph,
@@ -187,9 +206,13 @@ graph.newEdge(node1, node2);
   <span class="Constant">0</span>.<span class="Constant">5</span> <span class="Comment">// Damping</span>
 );
 </pre>
-    <p>I've written a Renderer class, which will handle the rendering loop. You just need to provide some callbacks to do the actual drawing.</p>
+    <p>
+      To simplify the layout calculation and animation rendering loop, I've provided a Renderer class.
+      You just need to provide some callbacks to do the actual drawing:
+    </p>
 <pre>
-<span class="Identifier">var</span> renderer = <span class="Normal">new</span> Renderer(<span class="Constant">10</span>, layout,
+<span class="Identifier">var</span> renderer = <span class="Normal">new</span> Renderer(
+  layout,
   <span class="Function">function</span> clear() <span class="Function">{</span>
     <span class="Comment">// code to clear screen</span>
   <span class="Function">}</span>,
@@ -202,16 +225,35 @@ graph.newEdge(node1, node2);
 );
 </pre>
 
-  <p>Now, just start the rendering loop:</p>
+  <p>Then to start the rendering loop:</p>
 
 <pre>
 renderer.start();
 </pre>
 
+    <p><b>Protip:</b> Take a look at the source code of springyui.js to get an idea of how to write your own renderer&mdash;it's a good place to start. Feel free to copy&#8209;paste what you need.</p>
+  </div>
+
   <div class="divider"><img src="pinus_serotina.png" alt="Pinus serotina" title="Pinus serotina" /></div>
 
-  <div id="usage" class="section">
+
+  <div id="further-reading" class="section">
+    <h2>Further reading</h2>
+    <p>Take a look at the source code of <a href="https://github.com/dhotson/springy/blob/master/springy.js">springy.js</a>. Don't be shy&mdash;there's not that much code and it should be pretty easy to understand.</p>
+    <p>Please let me know if anything is unclear. <a href="mailto:dennis.hotson@gmail.com">Feedback is welcome</a>. <b>:-)</b></p>
+  </div>
+
+  <div class="divider"><img src="cupressus_sempervirens.png" alt="Cupressus sempervirens" title="Cupressus sempervirens" /></div>
+
+  <div id="license" class="section">
+    <h2>License</h2>
+    <p>Springy is licensed under the <a href="https://github.com/dhotson/springy/blob/master/LICENSE">MIT</a> license.</p>
+  </div>
+
+  <div id="acknowledgements" class="section">
     <h2>Acknowledgements</h2>
+    <p>Thanks to <a href="https://github.com/lox">Lachlan Donald</a> for his helpful suggestions and feedback.</p>
+    <p>Thanks to <a href="http://en.wikipedia.org/wiki/Ernst_Haeckel">Ernst Haeckel</a> for the beautiful illustrations of Coniferae.</p>
   </div>
 
   <div class="divider"><img src="araucaria_brasiliana.png" alt="Araucaria brasiliana" title="Araucaria brasiliana" /></div>
