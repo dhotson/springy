@@ -62,7 +62,7 @@ So now to draw this graph, lets make a layout object:
 I've written a Renderer class, which will handle the rendering loop.
 You just need to provide some callbacks to do the actual drawing.
 
-    var renderer = new Renderer(10, layout,
+    var renderer = new Renderer(layout,
       function clear() {
         // code to clear screen
       },
