@@ -6,26 +6,41 @@
   <script src="springy.js"></script>
   <link rel="shortcut icon" href="favicon.ico" />
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       background: #FFF;
-      font-family: 'IM Fell English', serif;
+      font-family: Palatino, 'Palatino Linotype', 'Hoefler Text', Times, 'Times New Roman', serif;
       font-size: 18px;
-      line-height: 1.4;
+      color: #000;
+      line-height: 24px;
       text-align: center;
       margin-bottom: 120px;
+    }
+
+    p {
+      margin-bottom: 24px;
     }
 
     a:link { color: #0000AA; }
     a:visited { color: #660066; }
 
     h1 {
+      font-family: 'IM Fell English SC', serif;
       font-weight: normal;
       font-size: 48px;
-      font-family: 'IM Fell English SC', serif;
+      line-height: 48px;
+      margin-top: 24px;
     }
 
     .subtitle {
+      font-family: 'IM Fell English', serif;
+      font-weight: normal;
       font-size: 24px;
+      line-height: 48px;
       font-style: italic;
     }
 
@@ -33,11 +48,13 @@
       font-weight: normal;
       font-size: 32px;
       font-family: 'IM Fell English SC', serif;
+      line-height: 48px;
       margin-top: 0;
     }
 
     h3 {
       font-size: 18px;
+      line-height: 24px;
     }
 
     .section {
@@ -47,8 +64,10 @@
     }
 
     .divider {
-      margin: 2em 0;
+      margin: 48px 0;
       text-align: center;
+      line-height: 0;
+      font-size: 0;
     }
 
     .example {
@@ -61,14 +80,16 @@
     }
 
     pre {
-      font-family: monospace;
+      font-family: Courier, monospace;
       background: #EEEEEE;
       box-shadow: 0 0 50px 0 rgba(0,0,0,0.1) inset;
       -webkit-border-radius: 10px;
       -moz-border-radius: 10px;
       border-radius: 10px;
-      padding: 1em;
+      padding: 24px;
+      margin: 24px 0;
     }
+
     .Function { font-weight: bold; }
     .Normal { font-weight: bold; }
     .Identifier { font-weight: bold; }
@@ -96,7 +117,7 @@
     <p>It means that springy uses some real world physics to try and figure out how to show a network graph in a way that looks good.</p>
     <p>Here's an example:</p>
 
-    <canvas id="demo" class="example" width="650" height="300"></canvas>
+    <canvas id="demo" class="example" width="650" height="288"></canvas>
   </div>
 
   <!-- Here's a Springy worked example right here in the source. Enjoy! :-) -->
@@ -133,7 +154,7 @@
     },
     function drawEdge(edge, p1, p2) {
       ctx.save();
-      ctx.translate(325, 150);
+      ctx.translate(325, 144);
 
       ctx.strokeStyle = 'rgba(0,0,0,0.15)';
       ctx.lineWidth = 3.0;
@@ -147,7 +168,7 @@
     },
     function drawNode(node, p) {
       ctx.save();
-      ctx.translate(325, 150);
+      ctx.translate(325, 144);
 
       ctx.font = "18px 'IM Fell English', 'Times New Roman', serif";
 
