@@ -3,6 +3,8 @@ Springy
 
 A force directed graph layout algorithm in JavaScript.
 
+[http://getspringy.com/](http://getspringy.com/)
+
 What is this?
 ----
 
