@@ -42,11 +42,16 @@ Basic Usage
 See [demo.html](http://dhotson.github.com/springy/demo.html) for the way to
 add nodes and edges to graph and springyui.js for the rendering example.
 
-Starting from Springy 1.1 it is possible to add nodes with simple array
-of node names [demo2.html](http://techtonik.github.com/springy/demo2.html):
+Springy 1.1+ supports simplified API for adding nodes and edges, see
+[demo2.html](http://techtonik.github.com/springy/demo2.html):
 
     var graph = new Graph();
-    graph.addNodes(['mark', 'higgs', 'other', 'etc']);
+    graph.addNodes('mark', 'higgs', 'other', 'etc');
+    graph.addEdges(
+        ['mark', 'higgs'],
+        ['mark', 'etc'],
+        ['mark', 'other']
+    );
 
 Advanced Drawing
 ----
