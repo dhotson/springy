@@ -237,7 +237,7 @@ Layout.ForceDirected = function(graph, stiffness, repulsion, damping) {
 
 Layout.ForceDirected.prototype.point = function(node) {
 	if (typeof(this.nodePoints[node.id]) === 'undefined') {
-		var mass = typeof(node.data.mass) !== 'undefined' ? node.data.mass : 1.0;
+		var mass = (node.data.mass !== undefined) ? node.data.mass : 1.0;
 		this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
 	}
 
@@ -246,7 +246,7 @@ Layout.ForceDirected.prototype.point = function(node) {
 
 Layout.ForceDirected.prototype.spring = function(edge) {
 	if (typeof(this.edgeSprings[edge.id]) === 'undefined') {
-		var length = typeof(edge.data.length) !== 'undefined' ? edge.data.length : 1.0;
+		var length = (edge.data.length !== undefined) ? edge.data.length : 1.0;
 
 		var existingSpring = false;
 
