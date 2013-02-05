@@ -1,5 +1,5 @@
 /**
- * Springy v1.0.1
+ * Springy v1.1.0
  *
  * Copyright (c) 2010 Dennis Hotson
  *
@@ -38,18 +38,28 @@ var Graph = function() {
 
 var Node = function(id, data) {
 	this.id = id;
-	this.data = typeof(data) !== 'undefined' ? data : {};
+	this.data = (data !== undefined) ? data : {};
+
+// Data fields used by layout algorithm in this file:
+//   	this.data.mass 
+// Data used by default renderer in springyui.js
+//   	this.data.label
 };
 
 var Edge = function(id, source, target, data) {
 	this.id = id;
+        /** @type {Node} */
 	this.source = source;
 	this.target = target;
-	this.data = typeof(data) !== 'undefined' ? data : {};
+	this.data = (data !== undefined) ? data : {};
+
+// Edge data field used by layout alorithm
+//   	this.data.length
+//   	this.data.type
 };
 
 Graph.prototype.addNode = function(node) {
-	if (typeof(this.nodeSet[node.id]) === 'undefined') {
+	if (!(node.id in this.nodeSet)) {
 		this.nodes.push(node);
 	}
 
@@ -57,6 +67,16 @@ Graph.prototype.addNode = function(node) {
 
 	this.notify();
 	return node;
+};
+
+Graph.prototype.addNodes = function() {
+        // accepts variable number of arguments, where each argument
+        // is a string that becomes both node identifier and label
+        for (var i = 0; i < arguments.length; i++) {
+                var name = arguments[i];
+                var node = new Node(name, data = {label:name});
+                this.addNode(node);
+        }
 };
 
 Graph.prototype.addEdge = function(edge) {
@@ -69,10 +89,10 @@ Graph.prototype.addEdge = function(edge) {
 		this.edges.push(edge);
 	}
 
-	if (typeof(this.adjacency[edge.source.id]) === 'undefined') {
+	if (!(edge.source.id in this.adjacency)) {
 		this.adjacency[edge.source.id] = {};
 	}
-	if (typeof(this.adjacency[edge.source.id][edge.target.id]) === 'undefined') {
+	if (!(edge.target.id in this.adjacency[edge.source.id])) {
 		this.adjacency[edge.source.id][edge.target.id] = [];
 	}
 
@@ -89,6 +109,25 @@ Graph.prototype.addEdge = function(edge) {
 	return edge;
 };
 
+Graph.prototype.addEdges = function() {
+        // accepts variable number of arguments, where each argument
+        // is a triple [nodeid1, nodeid2, attributes]
+        for (var i = 0; i < arguments.length; i++) {
+                var e = arguments[i];
+                var node1 = this.nodeSet[e[0]];
+                if (node1 == undefined) {
+                        throw new TypeError("invalid node name: " + e[0]);
+                }
+                var node2 = this.nodeSet[e[1]];
+                if (node2 == undefined) {
+                        throw new TypeError("invalid node name: " + e[1]);
+                }
+                var attr = e[2];
+
+                this.newEdge(node1, node2, attr);
+        }
+};
+
 Graph.prototype.newNode = function(data) {
 	var node = new Node(this.nextNodeId++, data);
 	this.addNode(node);
@@ -103,8 +142,8 @@ Graph.prototype.newEdge = function(source, target, data) {
 
 // find the edges from node1 to node2
 Graph.prototype.getEdges = function(node1, node2) {
-	if (typeof(this.adjacency[node1.id]) !== 'undefined'
-		&& typeof(this.adjacency[node1.id][node2.id]) !== 'undefined') {
+	if (node1.id in this.adjacency
+		&& node2.id in this.adjacency[node1.id]) {
 		return this.adjacency[node1.id][node2.id];
 	}
 
@@ -113,7 +152,7 @@ Graph.prototype.getEdges = function(node1, node2) {
 
 // remove a node and it's associated edges from the graph
 Graph.prototype.removeNode = function(node) {
-	if (typeof(this.nodeSet[node.id]) !== 'undefined') {
+	if (node.id in this.nodeSet) {
 		delete this.nodeSet[node.id];
 	}
 
@@ -236,8 +275,8 @@ Layout.ForceDirected = function(graph, stiffness, repulsion, damping) {
 };
 
 Layout.ForceDirected.prototype.point = function(node) {
-	if (typeof(this.nodePoints[node.id]) === 'undefined') {
-		var mass = typeof(node.data.mass) !== 'undefined' ? node.data.mass : 1.0;
+	if (!(node.id in this.nodePoints)) {
+		var mass = (node.data.mass !== undefined) ? node.data.mass : 1.0;
 		this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
 	}
 
@@ -245,14 +284,14 @@ Layout.ForceDirected.prototype.point = function(node) {
 };
 
 Layout.ForceDirected.prototype.spring = function(edge) {
-	if (typeof(this.edgeSprings[edge.id]) === 'undefined') {
-		var length = typeof(edge.data.length) !== 'undefined' ? edge.data.length : 1.0;
+	if (!(edge.id in this.edgeSprings)) {
+		var length = (edge.data.length !== undefined) ? edge.data.length : 1.0;
 
 		var existingSpring = false;
 
 		var from = this.graph.getEdges(edge.source, edge.target);
 		from.forEach(function(e) {
-			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
+			if (existingSpring === false && e.id in this.edgeSprings) {
 				existingSpring = this.edgeSprings[e.id];
 			}
 		}, this);
@@ -263,7 +302,7 @@ Layout.ForceDirected.prototype.spring = function(edge) {
 
 		var to = this.graph.getEdges(edge.target, edge.source);
 		from.forEach(function(e){
-			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
+			if (existingSpring === false && e.id in this.edgeSprings) {
 				existingSpring = this.edgeSprings[e.id];
 			}
 		}, this);
@@ -397,13 +436,14 @@ Layout.ForceDirected.prototype.start = function(render, done) {
 		t.updateVelocity(0.03);
 		t.updatePosition(0.03);
 
-		if (typeof(render) !== 'undefined')
+		if (render !== undefined) {
 			render();
+                }
 
 		// stop simulation when energy of the system goes below a threshold
 		if (t.totalEnergy() < 0.01) {
 			t._started = false;
-			if (typeof(done) !== 'undefined') { done(); }
+			if (done !== undefined) { done(); }
 		} else {
 			Layout.requestAnimationFrame(step);
 		}
