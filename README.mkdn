@@ -24,7 +24,7 @@ Demo
 [demo](http://dhotson.github.com/springy/demo.html)
 
 
-Basic Usage
+Getting Started
 ----
 
 springy.js by itself is quite plain and doesn't include any code to do rendering
@@ -36,10 +36,24 @@ However, I've written a little helper jQuery plugin called springyui.js
 to help get you started. It's got a semi-decent default renderer and some
 half assed drag and drop.
 
-See demo.html and springyui.js for an example of usage.
+Basic Usage
+----
 
+See [demo.html](http://dhotson.github.com/springy/demo.html) for the way to
+add nodes and edges to graph and springyui.js for the rendering example.
 
-Advanced Usage
+Springy 1.1+ supports simplified API for adding nodes and edges, see
+[demo2.html](http://techtonik.github.com/springy/demo2.html):
+
+    var graph = new Graph();
+    graph.addNodes('mark', 'higgs', 'other', 'etc');
+    graph.addEdges(
+        ['mark', 'higgs'],
+        ['mark', 'etc'],
+        ['mark', 'other']
+    );
+
+Advanced Drawing
 ----
 
 If you're keen to do your own custom drawing, you'll need to know a few
