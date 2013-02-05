@@ -112,7 +112,7 @@ jQuery.fn.springy = function(params) {
 	});
 
 	Node.prototype.getWidth = function() {
-		var text = typeof(this.data.label) !== 'undefined' ? this.data.label : this.id;
+		var text = (this.data.label !== undefined) ? this.data.label : this.id;
 		if (this._width && this._width[text])
 			return this._width[text];
 
@@ -131,7 +131,7 @@ jQuery.fn.springy = function(params) {
 		return 20;
 	};
 
-	var renderer = new Renderer(1, layout,
+	var renderer = new Renderer(layout,
 		function clear() {
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 		},
@@ -174,18 +174,18 @@ jQuery.fn.springy = function(params) {
 				intersection = s2;
 			}
 
-			var stroke = typeof(edge.data.color) !== 'undefined' ? edge.data.color : '#000000';
+			var stroke = (edge.data.color !== undefined) ? edge.data.color : '#000000';
 
 			var arrowWidth;
 			var arrowLength;
 
-			var weight = typeof(edge.data.weight) !== 'undefined' ? edge.data.weight : 1.0;
+			var weight = (edge.data.weight !== undefined) ? edge.data.weight : 1.0;
 
 			ctx.lineWidth = Math.max(weight *  2, 0.1);
 			arrowWidth = 1 + ctx.lineWidth;
 			arrowLength = 8;
 
-			var directional = typeof(edge.data.directional) !== 'undefined' ? edge.data.directional : true;
+			var directional = (edge.data.directional !== undefined) ? edge.data.directional : true;
 
 			// line
 			var lineEnd;
@@ -218,7 +218,7 @@ jQuery.fn.springy = function(params) {
 			}
 
 			// label
-			if (typeof(edge.data.label) !== 'undefined') {
+			if (edge.data.label !== undefined) {
 				text = edge.data.label
 				ctx.save();
 				ctx.textAlign = "center";
@@ -256,7 +256,7 @@ jQuery.fn.springy = function(params) {
 			ctx.font = "16px Verdana, sans-serif";
 			ctx.fillStyle = "#000000";
 			ctx.font = "16px Verdana, sans-serif";
-			var text = typeof(node.data.label) !== 'undefined' ? node.data.label : node.id;
+			var text = (node.data.label !== undefined) ? node.data.label : node.id;
 			ctx.fillText(text, s.x - boxWidth/2 + 5, s.y - 8);
 
 			ctx.restore();

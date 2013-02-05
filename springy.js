@@ -1,5 +1,5 @@
 /**
- * Springy v1.0.1
+ * Springy v1.1.0
  *
  * Copyright (c) 2010 Dennis Hotson
  *
@@ -25,33 +25,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-//https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/forEach
-if ( !Array.prototype.forEach ) {
-  Array.prototype.forEach = function( callback, thisArg ) {
-    var T, k;
-    if ( this == null ) {
-      throw new TypeError( " this is null or not defined" );
-    }
-    var O = Object(this);
-    var len = O.length >>> 0; // Hack to convert O.length to a UInt32
-    if ( {}.toString.call(callback) != "[object Function]" ) {
-      throw new TypeError( callback + " is not a function" );
-    }
-    if ( thisArg ) {
-      T = thisArg;
-    }
-    k = 0;
-    while( k < len ) {
-      var kValue;
-      if ( k in O ) {
-        kValue = O[ k ];
-        callback.call( T, kValue, k, O );
-      }
-      k++;
-    }
-  };
-}
-
 var Graph = function() {
 	this.nodeSet = {};
 	this.nodes = [];
@@ -65,18 +38,28 @@ var Graph = function() {
 
 var Node = function(id, data) {
 	this.id = id;
-	this.data = typeof(data) !== 'undefined' ? data : {};
+	this.data = (data !== undefined) ? data : {};
+
+// Data fields used by layout algorithm in this file:
+//   	this.data.mass 
+// Data used by default renderer in springyui.js
+//   	this.data.label
 };
 
 var Edge = function(id, source, target, data) {
 	this.id = id;
+        /** @type {Node} */
 	this.source = source;
 	this.target = target;
-	this.data = typeof(data) !== 'undefined' ? data : {};
+	this.data = (data !== undefined) ? data : {};
+
+// Edge data field used by layout alorithm
+//   	this.data.length
+//   	this.data.type
 };
 
 Graph.prototype.addNode = function(node) {
-	if (typeof(this.nodeSet[node.id]) === 'undefined') {
+	if (!(node.id in this.nodeSet)) {
 		this.nodes.push(node);
 	}
 
@@ -84,6 +67,15 @@ Graph.prototype.addNode = function(node) {
 
 	this.notify();
 	return node;
+};
+
+Graph.prototype.addNodes = function(list) {
+        if (typeof(list[0]) == "string") {
+		list.forEach(function(name) {
+                    var node = new Node(name, data = {label:name});
+                    this.addNode(node);
+                }, this);
+        }
 };
 
 Graph.prototype.addEdge = function(edge) {
@@ -96,10 +88,10 @@ Graph.prototype.addEdge = function(edge) {
 		this.edges.push(edge);
 	}
 
-	if (typeof(this.adjacency[edge.source.id]) === 'undefined') {
+	if (!(edge.source.id in this.adjacency)) {
 		this.adjacency[edge.source.id] = {};
 	}
-	if (typeof(this.adjacency[edge.source.id][edge.target.id]) === 'undefined') {
+	if (!(edge.target.id in this.adjacency[edge.source.id])) {
 		this.adjacency[edge.source.id][edge.target.id] = [];
 	}
 
@@ -130,8 +122,8 @@ Graph.prototype.newEdge = function(source, target, data) {
 
 // find the edges from node1 to node2
 Graph.prototype.getEdges = function(node1, node2) {
-	if (typeof(this.adjacency[node1.id]) !== 'undefined'
-		&& typeof(this.adjacency[node1.id][node2.id]) !== 'undefined') {
+	if (node1.id in this.adjacency
+		&& node2.id in this.adjacency[node1.id]) {
 		return this.adjacency[node1.id][node2.id];
 	}
 
@@ -140,7 +132,7 @@ Graph.prototype.getEdges = function(node1, node2) {
 
 // remove a node and it's associated edges from the graph
 Graph.prototype.removeNode = function(node) {
-	if (typeof(this.nodeSet[node.id]) !== 'undefined') {
+	if (node.id in this.nodeSet) {
 		delete this.nodeSet[node.id];
 	}
 
@@ -263,8 +255,8 @@ Layout.ForceDirected = function(graph, stiffness, repulsion, damping) {
 };
 
 Layout.ForceDirected.prototype.point = function(node) {
-	if (typeof(this.nodePoints[node.id]) === 'undefined') {
-		var mass = typeof(node.data.mass) !== 'undefined' ? node.data.mass : 1.0;
+	if (!(node.id in this.nodePoints)) {
+		var mass = (node.data.mass !== undefined) ? node.data.mass : 1.0;
 		this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
 	}
 
@@ -272,14 +264,14 @@ Layout.ForceDirected.prototype.point = function(node) {
 };
 
 Layout.ForceDirected.prototype.spring = function(edge) {
-	if (typeof(this.edgeSprings[edge.id]) === 'undefined') {
-		var length = typeof(edge.data.length) !== 'undefined' ? edge.data.length : 1.0;
+	if (!(edge.id in this.edgeSprings)) {
+		var length = (edge.data.length !== undefined) ? edge.data.length : 1.0;
 
 		var existingSpring = false;
 
 		var from = this.graph.getEdges(edge.source, edge.target);
 		from.forEach(function(e) {
-			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
+			if (existingSpring === false && e.id in this.edgeSprings) {
 				existingSpring = this.edgeSprings[e.id];
 			}
 		}, this);
@@ -290,7 +282,7 @@ Layout.ForceDirected.prototype.spring = function(edge) {
 
 		var to = this.graph.getEdges(edge.target, edge.source);
 		from.forEach(function(e){
-			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
+			if (existingSpring === false && e.id in this.edgeSprings) {
 				existingSpring = this.edgeSprings[e.id];
 			}
 		}, this);
@@ -411,7 +403,7 @@ Layout.requestAnimationFrame = __bind(window.requestAnimationFrame ||
 
 
 // start simulation
-Layout.ForceDirected.prototype.start = function(interval, render, done) {
+Layout.ForceDirected.prototype.start = function(render, done) {
 	var t = this;
 
 	if (this._started) return;
@@ -424,13 +416,14 @@ Layout.ForceDirected.prototype.start = function(interval, render, done) {
 		t.updateVelocity(0.03);
 		t.updatePosition(0.03);
 
-		if (typeof(render) !== 'undefined')
+		if (render !== undefined) {
 			render();
+                }
 
 		// stop simulation when energy of the system goes below a threshold
 		if (t.totalEnergy() < 0.01) {
 			t._started = false;
-			if (typeof(done) !== 'undefined') { done(); }
+			if (done !== undefined) { done(); }
 		} else {
 			Layout.requestAnimationFrame(step);
 		}
@@ -547,8 +540,7 @@ Layout.ForceDirected.Spring = function(point1, point2, length, k) {
 // };
 
 // Renderer handles the layout rendering loop
-function Renderer(interval, layout, clear, drawEdge, drawNode) {
-	this.interval = interval;
+function Renderer(layout, clear, drawEdge, drawNode) {
 	this.layout = layout;
 	this.clear = clear;
 	this.drawEdge = drawEdge;
@@ -563,7 +555,7 @@ Renderer.prototype.graphChanged = function(e) {
 
 Renderer.prototype.start = function() {
 	var t = this;
-	this.layout.start(50, function render() {
+	this.layout.start(function render() {
 		t.clear();
 
 		t.layout.eachEdge(function(edge, spring) {
@@ -575,4 +567,32 @@ Renderer.prototype.start = function() {
 		});
 	});
 };
+
+// Array.forEach implementation for IE support..
+//https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/forEach
+if ( !Array.prototype.forEach ) {
+  Array.prototype.forEach = function( callback, thisArg ) {
+    var T, k;
+    if ( this == null ) {
+      throw new TypeError( " this is null or not defined" );
+    }
+    var O = Object(this);
+    var len = O.length >>> 0; // Hack to convert O.length to a UInt32
+    if ( {}.toString.call(callback) != "[object Function]" ) {
+      throw new TypeError( callback + " is not a function" );
+    }
+    if ( thisArg ) {
+      T = thisArg;
+    }
+    k = 0;
+    while( k < len ) {
+      var kValue;
+      if ( k in O ) {
+        kValue = O[ k ];
+        callback.call( T, kValue, k, O );
+      }
+      k++;
+    }
+  };
+}
 
