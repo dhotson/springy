@@ -69,12 +69,13 @@ Graph.prototype.addNode = function(node) {
 	return node;
 };
 
-Graph.prototype.addNodes = function(list) {
-        if (typeof(list[0]) == "string") {
-		list.forEach(function(name) {
-                    var node = new Node(name, data = {label:name});
-                    this.addNode(node);
-                }, this);
+Graph.prototype.addNodes = function() {
+        // accepts variable number of arguments, where each argument
+        // is a string that becomes both node identifier and label
+        for (var i = 0; i < arguments.length; i++) {
+                var name = arguments[i];
+                var node = new Node(name, data = {label:name});
+                this.addNode(node);
         }
 };
 
