@@ -49,7 +49,7 @@ var Edge = function(id, source, target, data) {
 };
 
 Graph.prototype.addNode = function(node) {
-	if (typeof(this.nodeSet[node.id]) === 'undefined') {
+	if (!(node.id in this.nodeSet)) {
 		this.nodes.push(node);
 	}
 
@@ -69,10 +69,10 @@ Graph.prototype.addEdge = function(edge) {
 		this.edges.push(edge);
 	}
 
-	if (typeof(this.adjacency[edge.source.id]) === 'undefined') {
+	if (!(edge.source.id in this.adjacency)) {
 		this.adjacency[edge.source.id] = {};
 	}
-	if (typeof(this.adjacency[edge.source.id][edge.target.id]) === 'undefined') {
+	if (!(edge.target.id in this.adjacency[edge.source.id])) {
 		this.adjacency[edge.source.id][edge.target.id] = [];
 	}
 
@@ -103,8 +103,8 @@ Graph.prototype.newEdge = function(source, target, data) {
 
 // find the edges from node1 to node2
 Graph.prototype.getEdges = function(node1, node2) {
-	if (typeof(this.adjacency[node1.id]) !== 'undefined'
-		&& typeof(this.adjacency[node1.id][node2.id]) !== 'undefined') {
+	if (node1.id in this.adjacency
+		&& node2.id in this.adjacency[node1.id]) {
 		return this.adjacency[node1.id][node2.id];
 	}
 
@@ -113,7 +113,7 @@ Graph.prototype.getEdges = function(node1, node2) {
 
 // remove a node and it's associated edges from the graph
 Graph.prototype.removeNode = function(node) {
-	if (typeof(this.nodeSet[node.id]) !== 'undefined') {
+	if (node.id in this.nodeSet) {
 		delete this.nodeSet[node.id];
 	}
 
@@ -236,7 +236,7 @@ Layout.ForceDirected = function(graph, stiffness, repulsion, damping) {
 };
 
 Layout.ForceDirected.prototype.point = function(node) {
-	if (typeof(this.nodePoints[node.id]) === 'undefined') {
+	if (!(node.id in this.nodePoints)) {
 		var mass = (node.data.mass !== undefined) ? node.data.mass : 1.0;
 		this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
 	}
@@ -245,14 +245,14 @@ Layout.ForceDirected.prototype.point = function(node) {
 };
 
 Layout.ForceDirected.prototype.spring = function(edge) {
-	if (typeof(this.edgeSprings[edge.id]) === 'undefined') {
+	if (!(edge.id in this.edgeSprings)) {
 		var length = (edge.data.length !== undefined) ? edge.data.length : 1.0;
 
 		var existingSpring = false;
 
 		var from = this.graph.getEdges(edge.source, edge.target);
 		from.forEach(function(e) {
-			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
+			if (existingSpring === false && e.id in this.edgeSprings) {
 				existingSpring = this.edgeSprings[e.id];
 			}
 		}, this);
@@ -263,7 +263,7 @@ Layout.ForceDirected.prototype.spring = function(edge) {
 
 		var to = this.graph.getEdges(edge.target, edge.source);
 		from.forEach(function(e){
-			if (existingSpring === false && typeof(this.edgeSprings[e.id]) !== 'undefined') {
+			if (existingSpring === false && e.id in this.edgeSprings) {
 				existingSpring = this.edgeSprings[e.id];
 			}
 		}, this);
