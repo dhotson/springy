@@ -69,12 +69,13 @@ Graph.prototype.addNode = function(node) {
 	return node;
 };
 
-Graph.prototype.addNodes = function(list) {
-        if (typeof(list[0]) == "string") {
-		list.forEach(function(name) {
-                    var node = new Node(name, data = {label:name});
-                    this.addNode(node);
-                }, this);
+Graph.prototype.addNodes = function() {
+        // accepts variable number of arguments, where each argument
+        // is a string that becomes both node identifier and label
+        for (var i = 0; i < arguments.length; i++) {
+                var name = arguments[i];
+                var node = new Node(name, data = {label:name});
+                this.addNode(node);
         }
 };
 
@@ -106,6 +107,25 @@ Graph.prototype.addEdge = function(edge) {
 
 	this.notify();
 	return edge;
+};
+
+Graph.prototype.addEdges = function() {
+        // accepts variable number of arguments, where each argument
+        // is a triple [nodeid1, nodeid2, attributes]
+        for (var i = 0; i < arguments.length; i++) {
+                var e = arguments[i];
+                var node1 = this.nodeSet[e[0]];
+                if (node1 == undefined) {
+                        throw new TypeError("invalid node name: " + e[0]);
+                }
+                var node2 = this.nodeSet[e[1]];
+                if (node2 == undefined) {
+                        throw new TypeError("invalid node name: " + e[1]);
+                }
+                var attr = e[2];
+
+                this.newEdge(node1, node2, attr);
+        }
 };
 
 Graph.prototype.newNode = function(data) {
