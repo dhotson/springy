@@ -34,7 +34,7 @@ jQuery.fn.springy = function(params) {
 	var nodeSelected = params.nodeSelected || null;
 
 	var canvas = this[0];
-	var ctx = canvas.getContext("2d");
+	var ctx = canvas.getContext('2d');
 
 	var layout = this.layout = new Layout.ForceDirected(graph, stiffness, repulsion, damping);
 
@@ -47,9 +47,9 @@ jQuery.fn.springy = function(params) {
 		targetBB = layout.getBoundingBox();
 		// current gets 20% closer to target every iteration
 		currentBB = {
-			bottomleft: currentBB.bottomleft.add( targetBB.bottomleft.subtract(currentBB.bottomleft)
+			bottomleft: currentBB.bottomleft.add(targetBB.bottomleft.subtract(currentBB.bottomleft)
 				.divide(10)),
-			topright: currentBB.topright.add( targetBB.topright.subtract(currentBB.topright)
+			topright: currentBB.topright.add(targetBB.topright.subtract(currentBB.topright)
 				.divide(10))
 		};
 
@@ -107,7 +107,7 @@ jQuery.fn.springy = function(params) {
 		renderer.start();
 	});
 
-	jQuery(window).bind('mouseup',function(e) {
+	jQuery(window).bind('mouseup', function(e) {
 		dragged = null;
 	});
 
@@ -117,7 +117,7 @@ jQuery.fn.springy = function(params) {
 			return this._width[text];
 
 		ctx.save();
-		ctx.font = "16px Verdana, sans-serif";
+		ctx.font = '16px Verdana, sans-serif';
 		var width = ctx.measureText(text).width + 10;
 		ctx.restore();
 
@@ -133,7 +133,7 @@ jQuery.fn.springy = function(params) {
 
 	var renderer = new Renderer(layout,
 		function clear() {
-			ctx.clearRect(0,0,canvas.width,canvas.height);
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
 		},
 		function drawEdge(edge, p1, p2) {
 			var x1 = toScreen(p1).x;
@@ -141,7 +141,7 @@ jQuery.fn.springy = function(params) {
 			var x2 = toScreen(p2).x;
 			var y2 = toScreen(p2).y;
 
-			var direction = new Vector(x2-x1, y2-y1);
+			var direction = new Vector(x2 - x1, y2 - y1);
 			var normal = direction.normal().normalise();
 
 			var from = graph.getEdges(edge.source, edge.target);
@@ -151,7 +151,7 @@ jQuery.fn.springy = function(params) {
 
 			// Figure out edge's position in relation to other edges between the same nodes
 			var n = 0;
-			for (var i=0; i<from.length; i++) {
+			for (var i = 0; i < from.length; i++) {
 				if (from[i].id === edge.id) {
 					n = i;
 				}
@@ -160,7 +160,7 @@ jQuery.fn.springy = function(params) {
 			var spacing = 6.0;
 
 			// Figure out how far off center the line should be drawn
-			var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
+			var offset = normal.multiply(-((total - 1) * spacing) / 2.0 + (n * spacing));
 
 			var s1 = toScreen(p1).add(offset);
 			var s2 = toScreen(p2).add(offset);
@@ -168,7 +168,7 @@ jQuery.fn.springy = function(params) {
 			var boxWidth = edge.target.getWidth();
 			var boxHeight = edge.target.getHeight();
 
-			var intersection = intersect_line_box(s1, s2, {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
+			var intersection = intersect_line_box(s1, s2, {x: x2 - boxWidth / 2.0, y: y2 - boxHeight / 2.0}, boxWidth, boxHeight);
 
 			if (!intersection) {
 				intersection = s2;
@@ -181,7 +181,7 @@ jQuery.fn.springy = function(params) {
 
 			var weight = (edge.data.weight !== undefined) ? edge.data.weight : 1.0;
 
-			ctx.lineWidth = Math.max(weight *  2, 0.1);
+			ctx.lineWidth = Math.max(weight * 2, 0.1);
 			arrowWidth = 1 + ctx.lineWidth;
 			arrowLength = 8;
 
@@ -219,13 +219,13 @@ jQuery.fn.springy = function(params) {
 
 			// label
 			if (edge.data.label !== undefined) {
-				text = edge.data.label
+				text = edge.data.label;
 				ctx.save();
-				ctx.textAlign = "center";
-				ctx.textBaseline = "top";
-				ctx.font = "10px Helvetica, sans-serif";
-				ctx.fillStyle = "#5BA6EC";
-				ctx.fillText(text, (x1+x2)/2, (y1+y2)/2);
+				ctx.textAlign = 'center';
+				ctx.textBaseline = 'top';
+				ctx.font = '10px Helvetica, sans-serif';
+				ctx.fillStyle = '#5BA6EC';
+				ctx.fillText(text, (x1 + x2) / 2, (y1 + y2) / 2);
 				ctx.restore();
 			}
 
@@ -239,25 +239,25 @@ jQuery.fn.springy = function(params) {
 			var boxHeight = node.getHeight();
 
 			// clear background
-			ctx.clearRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
+			ctx.clearRect(s.x - boxWidth / 2, s.y - 10, boxWidth, 20);
 
 			// fill background
 			if (selected !== null && nearest.node !== null && selected.node.id === node.id) {
-				ctx.fillStyle = "#FFFFE0";
+				ctx.fillStyle = '#FFFFE0';
 			} else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id) {
-				ctx.fillStyle = "#EEEEEE";
+				ctx.fillStyle = '#EEEEEE';
 			} else {
-				ctx.fillStyle = "#FFFFFF";
+				ctx.fillStyle = '#FFFFFF';
 			}
-			ctx.fillRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
+			ctx.fillRect(s.x - boxWidth / 2, s.y - 10, boxWidth, 20);
 
-			ctx.textAlign = "left";
-			ctx.textBaseline = "top";
-			ctx.font = "16px Verdana, sans-serif";
-			ctx.fillStyle = "#000000";
-			ctx.font = "16px Verdana, sans-serif";
+			ctx.textAlign = 'left';
+			ctx.textBaseline = 'top';
+			ctx.font = '16px Verdana, sans-serif';
+			ctx.fillStyle = '#000000';
+			ctx.font = '16px Verdana, sans-serif';
 			var text = (node.data.label !== undefined) ? node.data.label : node.id;
-			ctx.fillText(text, s.x - boxWidth/2 + 5, s.y - 8);
+			ctx.fillText(text, s.x - boxWidth / 2 + 5, s.y - 8);
 
 			ctx.restore();
 		}
@@ -267,15 +267,15 @@ jQuery.fn.springy = function(params) {
 
 	// helpers for figuring out where to draw arrows
 	function intersect_line_line(p1, p2, p3, p4) {
-		var denom = ((p4.y - p3.y)*(p2.x - p1.x) - (p4.x - p3.x)*(p2.y - p1.y));
+		var denom = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
 
 		// lines are parallel
 		if (denom === 0) {
 			return false;
 		}
 
-		var ua = ((p4.x - p3.x)*(p1.y - p3.y) - (p4.y - p3.y)*(p1.x - p3.x)) / denom;
-		var ub = ((p2.x - p1.x)*(p1.y - p3.y) - (p2.y - p1.y)*(p1.x - p3.x)) / denom;
+		var ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denom;
+		var ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denom;
 
 		if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
 			return false;
@@ -300,6 +300,6 @@ jQuery.fn.springy = function(params) {
 	}
 
 	return this;
-}
+};
 
 })();
