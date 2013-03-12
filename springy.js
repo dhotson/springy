@@ -148,6 +148,44 @@ Graph.prototype.newEdge = function(source, target, data) {
 	return edge;
 };
 
+
+// add nodes and edges from JSON object
+Graph.prototype.loadJSON = function(json) {
+/**
+Springy's simple JSON format for graphs.
+
+historically, Springy uses separate lists
+of nodes and edges:
+
+    {
+      "nodes": [
+        "center",
+        "left",
+        "right",
+        "up",
+        "satellite"
+      ],
+      "edges": [
+        ["center", "left"],
+        ["center", "right"],
+        ["center", "up"]
+      ]
+    }
+
+**/
+
+	if ('nodes' in json && 'edges' in json) {
+		var graph = this;
+		json['nodes'].forEach(function(name) {
+			graph.addNode(name);
+		});
+		json['edges'].forEach(function(pair) {
+			graph.addEdges(pair);
+		});
+	}
+}
+
+
 // find the edges from node1 to node2
 Graph.prototype.getEdges = function(node1, node2) {
 	if (node1.id in this.adjacency
