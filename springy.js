@@ -1,5 +1,5 @@
 /**
- * Springy v1.1.1
+ * Springy v1.2.0
  *
  * Copyright (c) 2010 Dennis Hotson
  *
@@ -142,6 +142,44 @@ Graph.prototype.newEdge = function(source, target, data) {
 	this.addEdge(edge);
 	return edge;
 };
+
+
+// add nodes and edges from JSON object
+Graph.prototype.loadJSON = function(json) {
+/**
+Springy's simple JSON format for graphs.
+
+historically, Springy uses separate lists
+of nodes and edges:
+
+    {
+      "nodes": [
+        "center",
+        "left",
+        "right",
+        "up",
+        "satellite"
+      ],
+      "edges": [
+        ["center", "left"],
+        ["center", "right"],
+        ["center", "up"]
+      ]
+    }
+
+**/
+
+	if ('nodes' in json && 'edges' in json) {
+		var graph = this;
+		json['nodes'].forEach(function(name) {
+			graph.addNodes(name);
+		});
+		json['edges'].forEach(function(pair) {
+			graph.addEdges(pair);
+		});
+	}
+}
+
 
 // find the edges from node1 to node2
 Graph.prototype.getEdges = function(node1, node2) {

@@ -1,0 +1,37 @@
+<html>
+<body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+<script src="springy.js"></script>
+<script src="springyui.js"></script>
+<script>
+var graph = new Graph();
+graph.loadJSON(
+{
+  "nodes": [
+    'Amphitryon',
+    'Alcmene',
+    'Iphicles',
+    'Heracles'
+  ],       
+  "edges": [
+    //['Amphitryon', 'Alcmene', {color: '#7DBE3C'}],
+    //['Alcmene', 'Amphitryon', {color: '#BE7D3C'}],
+    ['Amphitryon', 'Alcmene'],
+    ['Alcmene', 'Amphitryon'],
+    ['Amphitryon', 'Iphicles'],
+    ['Amphitryon', 'Heracles']
+  ]
+}
+);
+
+
+jQuery(function(){
+	var springy = jQuery('#springydemo').springy({
+		graph: graph
+	});
+});
+</script>
+
+<canvas id="springydemo" width="640" height="480" />
+</body>
+</html>
