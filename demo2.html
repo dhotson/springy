@@ -5,8 +5,8 @@
 <script src="springyui.js"></script>
 <script>
 var graph = new Graph();
-graph.addNodes('Dennis', 'Michael', 'Jessica', 'Timothy', 'Barbara', 'Franklin')
-graph.addNodes('Monty', 'James');
+graph.addNodes('Dennis', 'Michael', 'Jessica', 'Timothy', 'Barbara')
+graph.addNodes('Amphitryon', 'Alcmene', 'Iphicles', 'Heracles');
 
 graph.addEdges(
     ['Dennis', 'Michael', {color: '#00A0B0', label: 'Foo bar'}],
@@ -14,9 +14,10 @@ graph.addEdges(
     ['Michael', 'Jessica', {color: '#CC333F'}],
     ['Jessica', 'Barbara', {color: '#EB6841'}],
     ['Michael', 'Timothy', {color: '#EDC951'}],
-    ['Franklin', 'Monty', {color: '#7DBE3C'}],
-    ['Dennis', 'Monty', {color: '#000000'}],
-    ['Monty', 'James'],
+    ['Amphitryon', 'Alcmene', {color: '#7DBE3C'}],
+    ['Alcmene', 'Amphitryon', {color: '#BE7D3C'}],
+    ['Amphitryon', 'Iphicles'],
+    ['Amphitryon', 'Heracles'],
     ['Barbara', 'Timothy', {color: '#6A4A3C'}]
 );
 
