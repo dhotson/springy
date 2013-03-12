@@ -61,14 +61,7 @@ var Edge = function(id, source, target, data) {
 //   	this.data.type
 };
 
-Graph.prototype.addNode = function(mixed) {
-	// mixed can be Node object or a string
-	var node;
-	if (typeof mixed == "string" || mixed instanceof String) {
-		node = new Node(mixed, {label:mixed});
-	} else {
-		node = mixed;
-	}
+Graph.prototype.addNode = function(node) {
 	if (!(node.id in this.nodeSet)) {
 		this.nodes.push(node);
 	}
@@ -83,7 +76,9 @@ Graph.prototype.addNodes = function() {
         // accepts variable number of arguments, where each argument
         // is a string that becomes both node identifier and label
         for (var i = 0; i < arguments.length; i++) {
-                this.addNode(arguments[i]);
+                var name = arguments[i];
+                var node = new Node(name, {label:name});
+                this.addNode(node);
         }
 };
 
@@ -177,7 +172,7 @@ of nodes and edges:
 	if ('nodes' in json && 'edges' in json) {
 		var graph = this;
 		json['nodes'].forEach(function(name) {
-			graph.addNode(name);
+			graph.addNodes(name);
 		});
 		json['edges'].forEach(function(pair) {
 			graph.addEdges(pair);
