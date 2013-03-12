@@ -59,11 +59,11 @@ Springy 1.2+ also accepts JSON, see
 [demo-json.html](http://dhotson.github.com/springy/demo-json.html):
 
     graphJSON = {
-      "nodes": ['mark', 'higgs', 'other', 'etc'],
+      "nodes": ["mark", "higgs", "other", "etc"],
       "edges": [
-        ['mark', 'higgs'],
-        ['mark', 'etc'],
-        ['mark', 'other']
+        ["mark", "higgs"],
+        ["mark", "etc"],
+        ["mark", "other"]
       ]
     };
 
