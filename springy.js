@@ -1,5 +1,5 @@
 /**
- * Springy v1.1.1
+ * Springy v1.2.0
  *
  * Copyright (c) 2010 Dennis Hotson
  *
@@ -61,7 +61,14 @@ var Edge = function(id, source, target, data) {
 //   	this.data.type
 };
 
-Graph.prototype.addNode = function(node) {
+Graph.prototype.addNode = function(mixed) {
+	// mixed can be Node object or a string
+	var node;
+	if (typeof mixed == "string" || mixed instanceof String) {
+		node = new Node(mixed, {label:mixed});
+	} else {
+		node = mixed;
+	}
 	if (!(node.id in this.nodeSet)) {
 		this.nodes.push(node);
 	}
@@ -76,9 +83,7 @@ Graph.prototype.addNodes = function() {
         // accepts variable number of arguments, where each argument
         // is a string that becomes both node identifier and label
         for (var i = 0; i < arguments.length; i++) {
-                var name = arguments[i];
-                var node = new Node(name, {label:name});
-                this.addNode(node);
+                this.addNode(arguments[i]);
         }
 };
 
