@@ -1,5 +1,5 @@
 /**
- * Springy v1.1.0
+ * Springy v1.1.1
  *
  * Copyright (c) 2010 Dennis Hotson
  *
@@ -24,6 +24,9 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+
+// Enable strict mode for EC5 compatible browsers
+"use strict";
 
 var Graph = function() {
 	this.nodeSet = {};
@@ -74,7 +77,7 @@ Graph.prototype.addNodes = function() {
         // is a string that becomes both node identifier and label
         for (var i = 0; i < arguments.length; i++) {
                 var name = arguments[i];
-                var node = new Node(name, data = {label:name});
+                var node = new Node(name, {label:name});
                 this.addNode(node);
         }
 };
@@ -493,7 +496,7 @@ Layout.ForceDirected.prototype.getBoundingBox = function() {
 
 
 // Vector
-Vector = function(x, y) {
+var Vector = function(x, y) {
 	this.x = x;
 	this.y = y;
 };
