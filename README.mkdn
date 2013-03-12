@@ -21,9 +21,9 @@ Try to imagine it as a bunch of springs connected to each other.
 Demo
 ----
 
-[demo - basic](http://dhotson.github.com/springy/demo.html)
-: [demo - simplified API](http://dhotson.github.com/springy/demo-simple.html)
-: [demo - JSON API](http://dhotson.github.com/springy/demo-json.html)
+[basic](http://dhotson.github.com/springy/demo.html)
+| [simplified API](http://dhotson.github.com/springy/demo-simple.html)
+| [JSON API](http://dhotson.github.com/springy/demo-json.html)
 
 
 Getting Started
@@ -59,11 +59,11 @@ Springy 1.2+ also accepts JSON, see
 [demo-json.html](http://dhotson.github.com/springy/demo-json.html):
 
     graphJSON = {
-      "nodes": ['mark', 'higgs', 'other', 'etc'],
+      "nodes": ["mark", "higgs", "other", "etc"],
       "edges": [
-        ['mark', 'higgs'],
-        ['mark', 'etc'],
-        ['mark', 'other']
+        ["mark", "higgs"],
+        ["mark", "etc"],
+        ["mark", "other"]
       ]
     };
 

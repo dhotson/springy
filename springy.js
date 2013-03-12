@@ -168,6 +168,10 @@ of nodes and edges:
     }
 
 **/
+	// parse if a string is passed (EC5+ browsers)
+	if (typeof json == 'string' || json instanceof String) {
+		json = JSON.parse( json );
+	}
 
 	if ('nodes' in json || 'edges' in json) {
 		this.addNodes.apply(this, json['nodes']);
