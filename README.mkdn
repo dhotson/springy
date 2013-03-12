@@ -21,7 +21,9 @@ Try to imagine it as a bunch of springs connected to each other.
 Demo
 ----
 
-[demo](http://dhotson.github.com/springy/demo.html)
+[demo - basic](http://dhotson.github.com/springy/demo.html)
+: [demo - simplified API](http://dhotson.github.com/springy/demo-simple.html)
+: [demo - JSON API](http://dhotson.github.com/springy/demo-json.html)
 
 
 Getting Started
@@ -43,7 +45,7 @@ See [demo.html](http://dhotson.github.com/springy/demo.html) for the way to
 add nodes and edges to graph and springyui.js for the rendering example.
 
 Springy 1.1+ supports simplified API for adding nodes and edges, see
-[demo2.html](http://techtonik.github.com/springy/demo2.html):
+[demo-simple.html](http://dhotson.github.com/springy/demo-simple.html):
 
     var graph = new Graph();
     graph.addNodes('mark', 'higgs', 'other', 'etc');
@@ -52,6 +54,22 @@ Springy 1.1+ supports simplified API for adding nodes and edges, see
         ['mark', 'etc'],
         ['mark', 'other']
     );
+
+Springy 1.2+ also accepts JSON, see
+[demo-json.html](http://dhotson.github.com/springy/demo-json.html):
+
+    graphJSON = {
+      "nodes": ['mark', 'higgs', 'other', 'etc'],
+      "edges": [
+        ['mark', 'higgs'],
+        ['mark', 'etc'],
+        ['mark', 'other']
+      ]
+    };
+
+    var graph = new Graph();
+    graph.loadJSON(graphJSON);
+
 
 Advanced Drawing
 ----
