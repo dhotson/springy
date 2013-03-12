@@ -1,5 +1,5 @@
 /**
- * Springy v1.1.0
+ * Springy v1.2.0
  *
  * Copyright (c) 2010 Dennis Hotson
  *
@@ -25,6 +25,9 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+// Enable strict mode for EC5 compatible browsers
+"use strict";
+
 var Graph = function() {
 	this.nodeSet = {};
 	this.nodes = [];
@@ -41,7 +44,7 @@ var Node = function(id, data) {
 	this.data = (data !== undefined) ? data : {};
 
 // Data fields used by layout algorithm in this file:
-//   	this.data.mass 
+//   	this.data.mass
 // Data used by default renderer in springyui.js
 //   	this.data.label
 };
@@ -74,7 +77,7 @@ Graph.prototype.addNodes = function() {
         // is a string that becomes both node identifier and label
         for (var i = 0; i < arguments.length; i++) {
                 var name = arguments[i];
-                var node = new Node(name, data = {label:name});
+                var node = new Node(name, {label:name});
                 this.addNode(node);
         }
 };
@@ -139,6 +142,39 @@ Graph.prototype.newEdge = function(source, target, data) {
 	this.addEdge(edge);
 	return edge;
 };
+
+
+// add nodes and edges from JSON object
+Graph.prototype.loadJSON = function(json) {
+/**
+Springy's simple JSON format for graphs.
+
+historically, Springy uses separate lists
+of nodes and edges:
+
+    {
+      "nodes": [
+        "center",
+        "left",
+        "right",
+        "up",
+        "satellite"
+      ],
+      "edges": [
+        ["center", "left"],
+        ["center", "right"],
+        ["center", "up"]
+      ]
+    }
+
+**/
+
+	if ('nodes' in json || 'edges' in json) {
+		this.addNodes.apply(this, json['nodes']);
+		this.addEdges.apply(this, json['edges']);
+	}
+}
+
 
 // find the edges from node1 to node2
 Graph.prototype.getEdges = function(node1, node2) {
@@ -493,7 +529,7 @@ Layout.ForceDirected.prototype.getBoundingBox = function() {
 
 
 // Vector
-Vector = function(x, y) {
+var Vector = function(x, y) {
 	this.x = x;
 	this.y = y;
 };
