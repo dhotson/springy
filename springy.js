@@ -462,6 +462,14 @@ Layout.requestAnimationFrame = __bind(window.requestAnimationFrame ||
 	}, window);
 
 
+Layout.ForceDirected.prototype.tick = function(timestep) {
+	this.applyCoulombsLaw();
+	this.applyHookesLaw();
+	this.attractToCentre();
+	this.updateVelocity(timestep);
+	this.updatePosition(timestep);
+};
+
 // start simulation
 Layout.ForceDirected.prototype.start = function(render, done) {
 	var t = this;
@@ -471,11 +479,8 @@ Layout.ForceDirected.prototype.start = function(render, done) {
 	this._stop = false;
 
 	Layout.requestAnimationFrame(function step() {
-		t.applyCoulombsLaw();
-		t.applyHookesLaw();
-		t.attractToCentre();
-		t.updateVelocity(0.03);
-		t.updatePosition(0.03);
+
+		t.tick(0.03);
 
 		if (render !== undefined) {
 			render();
