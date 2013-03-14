@@ -1,5 +1,5 @@
 /**
- * Springy v1.2.0
+ * Springy v2.0.0
  *
  * Copyright (c) 2010 Dennis Hotson
  *
