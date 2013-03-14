@@ -44,21 +44,21 @@ var Node = function(id, data) {
 	this.data = (data !== undefined) ? data : {};
 
 // Data fields used by layout algorithm in this file:
-//   	this.data.mass
+// this.data.mass
 // Data used by default renderer in springyui.js
-//   	this.data.label
+// this.data.label
 };
 
 var Edge = function(id, source, target, data) {
 	this.id = id;
-        /** @type {Node} */
+				/** @type {Node} */
 	this.source = source;
 	this.target = target;
 	this.data = (data !== undefined) ? data : {};
 
 // Edge data field used by layout alorithm
-//   	this.data.length
-//   	this.data.type
+// this.data.length
+// this.data.type
 };
 
 Graph.prototype.addNode = function(node) {
@@ -73,13 +73,13 @@ Graph.prototype.addNode = function(node) {
 };
 
 Graph.prototype.addNodes = function() {
-        // accepts variable number of arguments, where each argument
-        // is a string that becomes both node identifier and label
-        for (var i = 0; i < arguments.length; i++) {
-                var name = arguments[i];
-                var node = new Node(name, {label:name});
-                this.addNode(node);
-        }
+	// accepts variable number of arguments, where each argument
+	// is a string that becomes both node identifier and label
+	for (var i = 0; i < arguments.length; i++) {
+		var name = arguments[i];
+		var node = new Node(name, {label:name});
+		this.addNode(node);
+	}
 };
 
 Graph.prototype.addEdge = function(edge) {
@@ -113,22 +113,22 @@ Graph.prototype.addEdge = function(edge) {
 };
 
 Graph.prototype.addEdges = function() {
-        // accepts variable number of arguments, where each argument
-        // is a triple [nodeid1, nodeid2, attributes]
-        for (var i = 0; i < arguments.length; i++) {
-                var e = arguments[i];
-                var node1 = this.nodeSet[e[0]];
-                if (node1 == undefined) {
-                        throw new TypeError("invalid node name: " + e[0]);
-                }
-                var node2 = this.nodeSet[e[1]];
-                if (node2 == undefined) {
-                        throw new TypeError("invalid node name: " + e[1]);
-                }
-                var attr = e[2];
+	// accepts variable number of arguments, where each argument
+	// is a triple [nodeid1, nodeid2, attributes]
+	for (var i = 0; i < arguments.length; i++) {
+		var e = arguments[i];
+		var node1 = this.nodeSet[e[0]];
+		if (node1 == undefined) {
+			throw new TypeError("invalid node name: " + e[0]);
+		}
+		var node2 = this.nodeSet[e[1]];
+		if (node2 == undefined) {
+			throw new TypeError("invalid node name: " + e[1]);
+		}
+		var attr = e[2];
 
-                this.newEdge(node1, node2, attr);
-        }
+		this.newEdge(node1, node2, attr);
+	}
 };
 
 Graph.prototype.newNode = function(data) {
@@ -152,20 +152,20 @@ Springy's simple JSON format for graphs.
 historically, Springy uses separate lists
 of nodes and edges:
 
-    {
-      "nodes": [
-        "center",
-        "left",
-        "right",
-        "up",
-        "satellite"
-      ],
-      "edges": [
-        ["center", "left"],
-        ["center", "right"],
-        ["center", "up"]
-      ]
-    }
+	{
+		"nodes": [
+			"center",
+			"left",
+			"right",
+			"up",
+			"satellite"
+		],
+		"edges": [
+			["center", "left"],
+			["center", "right"],
+			["center", "up"]
+		]
+	}
 
 **/
 	// parse if a string is passed (EC5+ browsers)
@@ -479,7 +479,7 @@ Layout.ForceDirected.prototype.start = function(render, done) {
 
 		if (render !== undefined) {
 			render();
-                }
+		}
 
 		// stop simulation when energy of the system goes below a threshold
 		if (t._stop || t.totalEnergy() < 0.01) {
@@ -492,7 +492,7 @@ Layout.ForceDirected.prototype.start = function(render, done) {
 };
 
 Layout.ForceDirected.prototype.stop = function() {
-  this._stop = true;
+	this._stop = true;
 }
 
 // Find the nearest point to a particular position
@@ -634,34 +634,34 @@ Renderer.prototype.start = function() {
 };
 
 Renderer.prototype.stop = function() {
-  this.layout.stop();
+	this.layout.stop();
 };
 
 // Array.forEach implementation for IE support..
 //https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/forEach
 if ( !Array.prototype.forEach ) {
-  Array.prototype.forEach = function( callback, thisArg ) {
-    var T, k;
-    if ( this == null ) {
-      throw new TypeError( " this is null or not defined" );
-    }
-    var O = Object(this);
-    var len = O.length >>> 0; // Hack to convert O.length to a UInt32
-    if ( {}.toString.call(callback) != "[object Function]" ) {
-      throw new TypeError( callback + " is not a function" );
-    }
-    if ( thisArg ) {
-      T = thisArg;
-    }
-    k = 0;
-    while( k < len ) {
-      var kValue;
-      if ( k in O ) {
-        kValue = O[ k ];
-        callback.call( T, kValue, k, O );
-      }
-      k++;
-    }
-  };
+	Array.prototype.forEach = function( callback, thisArg ) {
+		var T, k;
+		if ( this == null ) {
+			throw new TypeError( " this is null or not defined" );
+		}
+		var O = Object(this);
+		var len = O.length >>> 0; // Hack to convert O.length to a UInt32
+		if ( {}.toString.call(callback) != "[object Function]" ) {
+			throw new TypeError( callback + " is not a function" );
+		}
+		if ( thisArg ) {
+			T = thisArg;
+		}
+		k = 0;
+		while( k < len ) {
+			var kValue;
+			if ( k in O ) {
+				kValue = O[ k ];
+				callback.call( T, kValue, k, O );
+			}
+			k++;
+		}
+	};
 }
 
