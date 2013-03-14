@@ -26,7 +26,7 @@ Copyright (c) 2010 Dennis Hotson
 (function() {
 
 jQuery.fn.springy = function(params) {
-	var graph = this.graph = params.graph || new Graph();
+	var graph = this.graph = params.graph || new Springy.Graph();
 
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
@@ -36,14 +36,14 @@ jQuery.fn.springy = function(params) {
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
 
-	var layout = this.layout = new Layout.ForceDirected(graph, stiffness, repulsion, damping);
+	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping);
 
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
-	var targetBB = {bottomleft: new Vector(-2, -2), topright: new Vector(2, 2)};
+	var targetBB = {bottomleft: new Springy.Vector(-2, -2), topright: new Springy.Vector(2, 2)};
 
 	// auto adjusting bounding box
-	Layout.requestAnimationFrame(function adjust() {
+	Springy.requestAnimationFrame(function adjust() {
 		targetBB = layout.getBoundingBox();
 		// current gets 20% closer to target every iteration
 		currentBB = {
@@ -53,7 +53,7 @@ jQuery.fn.springy = function(params) {
 				.divide(10))
 		};
 
-		Layout.requestAnimationFrame(adjust);
+		Springy.requestAnimationFrame(adjust);
 	});
 
 	// convert to/from screen coordinates
@@ -61,14 +61,14 @@ jQuery.fn.springy = function(params) {
 		var size = currentBB.topright.subtract(currentBB.bottomleft);
 		var sx = p.subtract(currentBB.bottomleft).divide(size.x).x * canvas.width;
 		var sy = p.subtract(currentBB.bottomleft).divide(size.y).y * canvas.height;
-		return new Vector(sx, sy);
+		return new Springy.Vector(sx, sy);
 	};
 
 	fromScreen = function(s) {
 		var size = currentBB.topright.subtract(currentBB.bottomleft);
 		var px = (s.x / canvas.width) * size.x + currentBB.bottomleft.x;
 		var py = (s.y / canvas.height) * size.y + currentBB.bottomleft.y;
-		return new Vector(px, py);
+		return new Springy.Vector(px, py);
 	};
 
 	// half-assed drag and drop
@@ -120,7 +120,7 @@ jQuery.fn.springy = function(params) {
 		dragged = null;
 	});
 
-	Node.prototype.getWidth = function() {
+	Springy.Node.prototype.getWidth = function() {
 		var text = (this.data.label !== undefined) ? this.data.label : this.id;
 		if (this._width && this._width[text])
 			return this._width[text];
@@ -136,11 +136,11 @@ jQuery.fn.springy = function(params) {
 		return width;
 	};
 
-	Node.prototype.getHeight = function() {
+	Springy.Node.prototype.getHeight = function() {
 		return 20;
 	};
 
-	var renderer = this.renderer = new Renderer(layout,
+	var renderer = this.renderer = new Springy.Renderer(layout,
 		function clear() {
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 		},
@@ -150,7 +150,7 @@ jQuery.fn.springy = function(params) {
 			var x2 = toScreen(p2).x;
 			var y2 = toScreen(p2).y;
 
-			var direction = new Vector(x2-x1, y2-y1);
+			var direction = new Springy.Vector(x2-x1, y2-y1);
 			var normal = direction.normal().normalise();
 
 			var from = graph.getEdges(edge.source, edge.target);
@@ -290,7 +290,7 @@ jQuery.fn.springy = function(params) {
 			return false;
 		}
 
-		return new Vector(p1.x + ua * (p2.x - p1.x), p1.y + ua * (p2.y - p1.y));
+		return new Springy.Vector(p1.x + ua * (p2.x - p1.x), p1.y + ua * (p2.y - p1.y));
 	}
 
 	function intersect_line_box(p1, p2, p3, w, h) {
