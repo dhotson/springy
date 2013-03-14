@@ -131,7 +131,7 @@ jQuery.fn.springy = function(params) {
 		return 20;
 	};
 
-	var renderer = new Renderer(layout,
+	var renderer = this.renderer = new Renderer(layout,
 		function clear() {
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 		},
