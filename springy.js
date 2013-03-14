@@ -468,6 +468,7 @@ Layout.ForceDirected.prototype.start = function(render, done) {
 
 	if (this._started) return;
 	this._started = true;
+	this._stop = false;
 
 	Layout.requestAnimationFrame(function step() {
 		t.applyCoulombsLaw();
@@ -481,7 +482,7 @@ Layout.ForceDirected.prototype.start = function(render, done) {
                 }
 
 		// stop simulation when energy of the system goes below a threshold
-		if (t.totalEnergy() < 0.01) {
+		if (t._stop || t.totalEnergy() < 0.01) {
 			t._started = false;
 			if (done !== undefined) { done(); }
 		} else {
@@ -489,6 +490,10 @@ Layout.ForceDirected.prototype.start = function(render, done) {
 		}
 	});
 };
+
+Layout.ForceDirected.prototype.stop = function() {
+  this._stop = true;
+}
 
 // Find the nearest point to a particular position
 Layout.ForceDirected.prototype.nearest = function(pos) {
@@ -626,6 +631,10 @@ Renderer.prototype.start = function() {
 			t.drawNode(node, point.p);
 		});
 	});
+};
+
+Renderer.prototype.stop = function() {
+  this.layout.stop();
 };
 
 // Array.forEach implementation for IE support..
