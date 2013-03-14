@@ -6,7 +6,10 @@
 <script>
 var graph = new Graph();
 
-var dennis = graph.newNode({label: 'Dennis'});
+var dennis = graph.newNode({
+  label: 'Dennis',
+  ondoubleclick: function() { console.log("Hello!"); }
+});
 var michael = graph.newNode({label: 'Michael'});
 var jessica = graph.newNode({label: 'Jessica'});
 var timothy = graph.newNode({label: 'Timothy'});
