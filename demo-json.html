@@ -3,26 +3,28 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
 <script src="springy.js"></script>
 <script src="springyui.js"></script>
+
+
 <script>
-var graph = new Graph();
-graph.loadJSON(
-{
+var graphJSON = {
   "nodes": [
-    'Amphitryon',
-    'Alcmene',
-    'Iphicles',
-    'Heracles'
+    "Amphitryon",
+    "Alcmene",
+    "Iphicles",
+    "Heracles"
   ],
   "edges": [
-    ['Amphitryon', 'Alcmene'],
-    ['Alcmene', 'Amphitryon'],
-    ['Amphitryon', 'Iphicles'],
-    ['Amphitryon', 'Heracles']
+    ["Amphitryon", "Alcmene"],
+    ["Alcmene", "Amphitryon"],
+    ["Amphitryon", "Iphicles"],
+    ["Amphitryon", "Heracles"]
   ]
-}
-);
+};
 
 jQuery(function(){
+  var graph = new Springy.Graph();
+  graph.loadJSON(graphJSON);
+
   var springy = jQuery('#springydemo').springy({
     graph: graph
   });
@@ -30,5 +32,7 @@ jQuery(function(){
 </script>
 
 <canvas id="springydemo" width="640" height="480" />
+
+
 </body>
 </html>

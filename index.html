@@ -124,7 +124,7 @@
   <script>
 (function() {
   // make a new graph
-  var graph = new Graph();
+  var graph = new Springy.Graph();
 
   // make some nodes
   var node1 = graph.newNode({label: 'Norway Spruce'});
@@ -138,7 +138,7 @@
   graph.newEdge(node2, node4);
   graph.newEdge(node1, node4);
 
-  var layout = new Layout.ForceDirected(
+  var layout = new Springy.Layout.ForceDirected(
     graph,
     200.0, // Spring stiffness
     400.0, // Node repulsion
@@ -148,7 +148,7 @@
   var canvas = document.getElementById('demo');
   var ctx = canvas.getContext('2d');
 
-  var renderer = new Renderer(layout,
+  var renderer = new Springy.Renderer(layout,
     function clear() {
       ctx.clearRect(0, 0, 650, 300);
     },
@@ -199,7 +199,7 @@
     <p>Here's how to create a graph and add nodes and edges:</p>
 <pre>
 <span class="Comment">// make a new graph</span>
-<span class="Identifier">var</span><span class="Special"> graph = </span><span class="Normal">new</span><span class="Special"> Graph</span>()<span class="Special">;</span>
+<span class="Identifier">var</span><span class="Special"> graph = </span><span class="Normal">new</span><span class="Special"> Springy.Graph</span>()<span class="Special">;</span>
 
 <span class="Comment">// make some nodes</span>
 <span class="Identifier">var</span><span class="Special"> spruce = graph.newNode</span>(<span class="Function">{</span><span class="Special">label: </span><span class="String">'Norway Spruce'</span><span class="Function">}</span>)<span class="Special">;</span>
@@ -226,10 +226,10 @@
     <h3>Do your own rendering</h3>
     <p>If you're keen to do your own custom drawing or interaction&mdash;there's a few extra things you'll need to know.</p>
 
-    <p>The core Springy layout algorithm is in the Layout.ForceDirected class.</p>
+    <p>The core Springy layout algorithm is in the Springy.Layout.ForceDirected class.</p>
     <p>When creating a layout object, there are a few parameters you can tune to make the graph layout algorithm behave how you like:</p>
 <pre>
-<span class="Identifier">var</span> layout = <span class="Normal">new</span> Layout.ForceDirected(
+<span class="Identifier">var</span> layout = <span class="Normal">new</span> Springy.Layout.ForceDirected(
   graph,
   <span class="Constant">400</span>.<span class="Constant">0</span>, <span class="Comment">// Spring stiffness</span>
   <span class="Constant">400</span>.<span class="Constant">0</span>, <span class="Comment">// Node repulsion</span>
@@ -241,7 +241,7 @@
       You just need to provide some callbacks to do the actual drawing:
     </p>
 <pre>
-<span class="Identifier">var</span> renderer = <span class="Normal">new</span> Renderer(
+<span class="Identifier">var</span> renderer = <span class="Normal">new</span> Springy.Renderer(
   layout,
   <span class="Function">function</span> clear() <span class="Function">{</span>
     <span class="Comment">// code to clear screen</span>
