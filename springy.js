@@ -1,5 +1,5 @@
 /**
- * Springy v2.0.0
+ * Springy v2.0.1
  *
  * Copyright (c) 2010 Dennis Hotson
  *
@@ -215,7 +215,6 @@
 		}
 
 		this.detachNode(node);
-
 	};
 
 	// removes edges associated with a given node
@@ -247,6 +246,16 @@
 						this.adjacency[x][y].splice(j, 1);
 					}
 				}
+
+				// Clean up empty edge arrays
+				if (this.adjacency[x][y].length == 0) {
+					delete this.adjacency[x][y];
+				}
+			}
+
+			// Clean up empty objects
+			if (isEmpty(this.adjacency[x])) {
+				delete this.adjacency[x];
 			}
 		}
 
@@ -676,4 +685,13 @@
 			}
 		};
 	}
+
+	var isEmpty = function(obj) {
+		for (var k in obj) {
+			if (obj.hasOwnProperty(k)) {
+				return false;
+			}
+		}
+		return true;
+	};
 }).call(this);
