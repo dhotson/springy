@@ -47,7 +47,7 @@ add nodes and edges to graph and springyui.js for the rendering example.
 Springy 1.1+ supports simplified API for adding nodes and edges, see
 [demo-simple.html](http://dhotson.github.com/springy/demo-simple.html):
 
-    var graph = new Graph();
+    var graph = new Springy.Graph();
     graph.addNodes('mark', 'higgs', 'other', 'etc');
     graph.addEdges(
         ['mark', 'higgs'],
@@ -67,7 +67,7 @@ Springy 1.2+ also accepts JSON, see
       ]
     };
 
-    var graph = new Graph();
+    var graph = new Springy.Graph();
     graph.loadJSON(graphJSON);
 
 
@@ -80,7 +80,7 @@ things before you get started.
 This is the basic graph API, you can create nodes and edges etc.
 
     // make a new graph
-    var graph = new Graph();
+    var graph = new Springy.Graph();
 
     // make some nodes
     var node1 = graph.newNode({label: '1'});
@@ -91,12 +91,12 @@ This is the basic graph API, you can create nodes and edges etc.
 
 So now to draw this graph, lets make a layout object:
 
-    var layout = new Layout.ForceDirected(graph, 400.0, 400.0, 0.5);
+    var layout = new Springy.Layout.ForceDirected(graph, 400.0, 400.0, 0.5);
 
 I've written a Renderer class, which will handle the rendering loop.
 You just need to provide some callbacks to do the actual drawing.
 
-    var renderer = new Renderer(layout,
+    var renderer = new Springy.Renderer(layout,
       function clear() {
         // code to clear screen
       },
