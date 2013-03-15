@@ -464,14 +464,14 @@
 
 	var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }; // stolen from coffeescript, thanks jashkenas! ;-)
 
-	Springy.requestAnimationFrame = __bind(window.requestAnimationFrame ||
-		window.webkitRequestAnimationFrame ||
-		window.mozRequestAnimationFrame ||
-		window.oRequestAnimationFrame ||
-		window.msRequestAnimationFrame ||
-		function(callback, element) {
-			window.setTimeout(callback, 10);
-		}, window);
+	Springy.requestAnimationFrame = __bind(root.requestAnimationFrame ||
+		root.webkitRequestAnimationFrame ||
+		root.mozRequestAnimationFrame ||
+		root.oRequestAnimationFrame ||
+		root.msRequestAnimationFrame ||
+		(function(callback, element) {
+			root.setTimeout(callback, 10);
+		}), root);
 
 
 	// start simulation
