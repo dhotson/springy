@@ -1,0 +1,21 @@
+{
+  "name": "springy",
+  "version": "2.0.1",
+  "description": "A force directed graph layout algorithm in JavaScript.",
+  "main": "springy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dhotson/springy.git"
+  },
+  "keywords": [
+    "graph",
+    "layout",
+    "visualization"
+  ],
+  "author": "Dennis Hotson <dennis.hotson@gmail.com>",
+  "license": "MIT",
+  "readmeFilename": "README.mkdn"
+}
