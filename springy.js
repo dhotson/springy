@@ -483,7 +483,10 @@
 		}), root);
 
 
-	// start simulation
+	/**
+	 * Start simulation if it's not running already.
+	 * In case it's running then the call is ignored, and none of the callbacks passed is ever executed.
+	 */
 	Layout.ForceDirected.prototype.start = function(render, done) {
 		var t = this;
 
@@ -640,6 +643,12 @@
 	};
 
 	/**
+	 * Starts the simulation of the layout in use. 
+	 * 
+	 * Note that in case the algorithm is still or already running then the layout that's in use 
+	 * might silently ignore the call, and your optional <code>done</code> callback is never executed.
+	 * At least the built-in ForceDirected layout behaves in this way.
+	 * 
 	 * @param done An optional callback function that gets executed when the springy algorithm stops, 
 	 *             either because it ended or because stop() was called.
 	 */
