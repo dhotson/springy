@@ -487,12 +487,14 @@
 	 * Start simulation if it's not running already.
 	 * In case it's running then the call is ignored, and none of the callbacks passed is ever executed.
 	 */
-	Layout.ForceDirected.prototype.start = function(render, done) {
+	Layout.ForceDirected.prototype.start = function(render, onRenderStart, onRenderStop) {
 		var t = this;
 
 		if (this._started) return;
 		this._started = true;
 		this._stop = false;
+		
+		if (onRenderStart !== undefined) { onRenderStart(); }
 
 		Springy.requestAnimationFrame(function step() {
 			t.applyCoulombsLaw();
@@ -508,7 +510,7 @@
 			// stop simulation when energy of the system goes below a threshold
 			if (t._stop || t.totalEnergy() < 0.01) {
 				t._started = false;
-				if (done !== undefined) { done(); }
+				if (onRenderStop !== undefined) { onRenderStop(); }
 			} else {
 				Springy.requestAnimationFrame(step);
 			}
@@ -628,12 +630,18 @@
 	// 	return Math.abs(ac.x * n.x + ac.y * n.y);
 	// };
 
-	// Renderer handles the layout rendering loop
-	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode) {
+	/**
+	 * Renderer handles the layout rendering loop
+	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
+	 * @param onRenderStop optional callback function that gets executed whenever rendering stops.
+	 */
+	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStart, onRenderStop) {
 		this.layout = layout;
 		this.clear = clear;
 		this.drawEdge = drawEdge;
 		this.drawNode = drawNode;
+        	this.onRenderStart = onRenderStart;
+		this.onRenderStop  = onRenderStop;
 
 		this.layout.graph.addGraphListener(this);
 	}
@@ -664,7 +672,7 @@
 			t.layout.eachNode(function(node, point) {
 				t.drawNode(node, point.p);
 			});
-		}, done);
+		}, this.onRenderStart, this.onRenderStop);
 	};
 
 	Renderer.prototype.stop = function() {
