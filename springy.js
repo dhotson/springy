@@ -639,7 +639,11 @@
 		this.start();
 	};
 
-	Renderer.prototype.start = function() {
+	/**
+	 * @param done An optional callback function that gets executed when the springy algorithm stops, 
+	 *             either because it ended or because stop() was called.
+	 */
+	Renderer.prototype.start = function(done) {
 		var t = this;
 		this.layout.start(function render() {
 			t.clear();
@@ -651,7 +655,7 @@
 			t.layout.eachNode(function(node, point) {
 				t.drawNode(node, point.p);
 			});
-		});
+		}, done);
 	};
 
 	Renderer.prototype.stop = function() {
