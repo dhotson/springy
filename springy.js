@@ -1,7 +1,7 @@
 /**
  * Springy v2.0.1
  *
- * Copyright (c) 2010 Dennis Hotson
+ * Copyright (c) 2010-2013 Dennis Hotson
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
