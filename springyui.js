@@ -132,12 +132,38 @@ jQuery.fn.springy = function(params) {
 
 		this._width || (this._width = {});
 		this._width[text] = width;
+		
+		if(this.image && this.image.width>width)
+		{
+			width = this.image.width;
+		}
 
 		return width;
 	};
 
 	Springy.Node.prototype.getHeight = function() {
+		if(this.image)
+		{
+			return 20 + this.image.height;
+		}
 		return 20;
+	};
+
+	Springy.Node.prototype.getImage = function() {
+		var image = this.data.image;
+		if(image && !$(image).is('img')){
+			var image =  new Image(); 
+			if(typeof(this.data.image) == 'object'){
+				image.width = (this.data.image.width) ? this.data.image.width : 40;
+				image.height = (this.data.image.height) ? this.data.image.height : 40;
+				image.src = this.data.image.src;
+			} else {
+				image.width = 40;
+				image.height = 40;
+				image.src = this.data.image;
+			}
+		}
+		return image;
 	};
 
 	var renderer = this.renderer = new Springy.Renderer(layout,
@@ -246,9 +272,19 @@ jQuery.fn.springy = function(params) {
 
 			var boxWidth = node.getWidth();
 			var boxHeight = node.getHeight();
+			var textX = s.x - boxWidth/2;
+			var textY;
+			if(node.getImage()){
+				var image = node.getImage();
+				// draw node image
+				ctx.drawImage(image, s.x - image.width/2, s.y - image.height/2, image.width, image.height);
+				textY = s.y + 2 + image.height/2;
+			}else{
+				textY = s.y - 10;
+			}
 
 			// clear background
-			ctx.clearRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
+			ctx.clearRect(textX + 5, textY, boxWidth, 20);
 
 			// fill background
 			if (selected !== null && nearest.node !== null && selected.node.id === node.id) {
@@ -258,7 +294,7 @@ jQuery.fn.springy = function(params) {
 			} else {
 				ctx.fillStyle = "#FFFFFF";
 			}
-			ctx.fillRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
+			ctx.fillRect(textX + 5, textY, boxWidth, 20);
 
 			ctx.textAlign = "left";
 			ctx.textBaseline = "top";
@@ -266,7 +302,7 @@ jQuery.fn.springy = function(params) {
 			ctx.fillStyle = "#000000";
 			ctx.font = "16px Verdana, sans-serif";
 			var text = (node.data.label !== undefined) ? node.data.label : node.id;
-			ctx.fillText(text, s.x - boxWidth/2 + 5, s.y - 8);
+			ctx.fillText(text, textX + 5, textY + 2);
 
 			ctx.restore();
 		}
