@@ -1,7 +1,7 @@
 /**
  * Springy v2.0.1
  *
- * Copyright (c) 2010 Dennis Hotson
+ * Copyright (c) 2010-2013 Dennis Hotson
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -483,13 +483,18 @@
 		}), root);
 
 
-	// start simulation
-	Layout.ForceDirected.prototype.start = function(render, done) {
+	/**
+	 * Start simulation if it's not running already.
+	 * In case it's running then the call is ignored, and none of the callbacks passed is ever executed.
+	 */
+	Layout.ForceDirected.prototype.start = function(render, onRenderStart, onRenderStop) {
 		var t = this;
 
 		if (this._started) return;
 		this._started = true;
 		this._stop = false;
+		
+		if (onRenderStart !== undefined) { onRenderStart(); }
 
 		Springy.requestAnimationFrame(function step() {
 			t.applyCoulombsLaw();
@@ -505,7 +510,7 @@
 			// stop simulation when energy of the system goes below a threshold
 			if (t._stop || t.totalEnergy() < 0.01) {
 				t._started = false;
-				if (done !== undefined) { done(); }
+				if (onRenderStop !== undefined) { onRenderStop(); }
 			} else {
 				Springy.requestAnimationFrame(step);
 			}
@@ -625,12 +630,18 @@
 	// 	return Math.abs(ac.x * n.x + ac.y * n.y);
 	// };
 
-	// Renderer handles the layout rendering loop
-	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode) {
+	/**
+	 * Renderer handles the layout rendering loop
+	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
+	 * @param onRenderStop optional callback function that gets executed whenever rendering stops.
+	 */
+	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStart, onRenderStop) {
 		this.layout = layout;
 		this.clear = clear;
 		this.drawEdge = drawEdge;
 		this.drawNode = drawNode;
+        	this.onRenderStart = onRenderStart;
+		this.onRenderStop  = onRenderStop;
 
 		this.layout.graph.addGraphListener(this);
 	}
@@ -639,7 +650,17 @@
 		this.start();
 	};
 
-	Renderer.prototype.start = function() {
+	/**
+	 * Starts the simulation of the layout in use. 
+	 * 
+	 * Note that in case the algorithm is still or already running then the layout that's in use 
+	 * might silently ignore the call, and your optional <code>done</code> callback is never executed.
+	 * At least the built-in ForceDirected layout behaves in this way.
+	 * 
+	 * @param done An optional callback function that gets executed when the springy algorithm stops, 
+	 *             either because it ended or because stop() was called.
+	 */
+	Renderer.prototype.start = function(done) {
 		var t = this;
 		this.layout.start(function render() {
 			t.clear();
@@ -651,7 +672,7 @@
 			t.layout.eachNode(function(node, point) {
 				t.drawNode(node, point.p);
 			});
-		});
+		}, this.onRenderStart, this.onRenderStop);
 	};
 
 	Renderer.prototype.stop = function() {
