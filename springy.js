@@ -487,13 +487,13 @@
 	 * Start simulation if it's not running already.
 	 * In case it's running then the call is ignored, and none of the callbacks passed is ever executed.
 	 */
-	Layout.ForceDirected.prototype.start = function(render, onRenderStart, onRenderStop) {
+	Layout.ForceDirected.prototype.start = function(render, onRenderStop, onRenderStart) {
 		var t = this;
 
 		if (this._started) return;
 		this._started = true;
 		this._stop = false;
-		
+
 		if (onRenderStart !== undefined) { onRenderStart(); }
 
 		Springy.requestAnimationFrame(function step() {
@@ -632,16 +632,16 @@
 
 	/**
 	 * Renderer handles the layout rendering loop
-	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
 	 * @param onRenderStop optional callback function that gets executed whenever rendering stops.
+	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
 	 */
-	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStart, onRenderStop) {
+	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStop, onRenderStart) {
 		this.layout = layout;
 		this.clear = clear;
 		this.drawEdge = drawEdge;
 		this.drawNode = drawNode;
-        	this.onRenderStart = onRenderStart;
 		this.onRenderStop  = onRenderStop;
+		this.onRenderStart = onRenderStart;
 
 		this.layout.graph.addGraphListener(this);
 	}
@@ -651,13 +651,13 @@
 	};
 
 	/**
-	 * Starts the simulation of the layout in use. 
-	 * 
-	 * Note that in case the algorithm is still or already running then the layout that's in use 
+	 * Starts the simulation of the layout in use.
+	 *
+	 * Note that in case the algorithm is still or already running then the layout that's in use
 	 * might silently ignore the call, and your optional <code>done</code> callback is never executed.
 	 * At least the built-in ForceDirected layout behaves in this way.
-	 * 
-	 * @param done An optional callback function that gets executed when the springy algorithm stops, 
+	 *
+	 * @param done An optional callback function that gets executed when the springy algorithm stops,
 	 *             either because it ended or because stop() was called.
 	 */
 	Renderer.prototype.start = function(done) {
