@@ -27,7 +27,8 @@ Copyright (c) 2010 Dennis Hotson
 
 jQuery.fn.springy = function(params) {
 	var graph = this.graph = params.graph || new Springy.Graph();
-
+	var nodeFont = "16px Verdana, sans-serif";
+	var edgeFont = "8px Verdana, sans-serif";
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
@@ -57,14 +58,14 @@ jQuery.fn.springy = function(params) {
 	});
 
 	// convert to/from screen coordinates
-	toScreen = function(p) {
+	var toScreen = function(p) {
 		var size = currentBB.topright.subtract(currentBB.bottomleft);
 		var sx = p.subtract(currentBB.bottomleft).divide(size.x).x * canvas.width;
 		var sy = p.subtract(currentBB.bottomleft).divide(size.y).y * canvas.height;
 		return new Springy.Vector(sx, sy);
 	};
 
-	fromScreen = function(s) {
+	var fromScreen = function(s) {
 		var size = currentBB.topright.subtract(currentBB.bottomleft);
 		var px = (s.x / canvas.width) * size.x + currentBB.bottomleft.x;
 		var py = (s.y / canvas.height) * size.y + currentBB.bottomleft.y;
@@ -126,7 +127,7 @@ jQuery.fn.springy = function(params) {
 			return this._width[text];
 
 		ctx.save();
-		ctx.font = "16px Verdana, sans-serif";
+		ctx.font = (this.data.font !== undefined) ? this.data.font : nodeFont;
 		var width = ctx.measureText(text).width + 10;
 		ctx.restore();
 
@@ -166,7 +167,8 @@ jQuery.fn.springy = function(params) {
 				}
 			}
 
-			var spacing = 6.0;
+			//change default to  10.0 to allow text fit between edges
+			var spacing = 12.0;
 
 			// Figure out how far off center the line should be drawn
 			var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
@@ -232,9 +234,12 @@ jQuery.fn.springy = function(params) {
 				ctx.save();
 				ctx.textAlign = "center";
 				ctx.textBaseline = "top";
-				ctx.font = "10px Helvetica, sans-serif";
-				ctx.fillStyle = "#5BA6EC";
-				ctx.fillText(text, (x1+x2)/2, (y1+y2)/2);
+				ctx.font = (edge.data.font !== undefined) ? edge.data.font : edgeFont;
+				ctx.fillStyle = stroke;
+				var textPos = s1.add(s2).divide(2).add(normal.multiply(-8));
+				ctx.translate(textPos.x, textPos.y);
+				ctx.rotate(Math.atan2(s2.y - s1.y, s2.x - s1.x));
+				ctx.fillText(text, 0,-2);
 				ctx.restore();
 			}
 
@@ -251,7 +256,7 @@ jQuery.fn.springy = function(params) {
 			ctx.clearRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
 
 			// fill background
-			if (selected !== null && nearest.node !== null && selected.node.id === node.id) {
+			if (selected !== null && selected.node !== null && selected.node.id === node.id) {
 				ctx.fillStyle = "#FFFFE0";
 			} else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id) {
 				ctx.fillStyle = "#EEEEEE";
@@ -262,9 +267,8 @@ jQuery.fn.springy = function(params) {
 
 			ctx.textAlign = "left";
 			ctx.textBaseline = "top";
-			ctx.font = "16px Verdana, sans-serif";
+			ctx.font = (node.data.font !== undefined) ? node.data.font : nodeFont;
 			ctx.fillStyle = "#000000";
-			ctx.font = "16px Verdana, sans-serif";
 			var text = (node.data.label !== undefined) ? node.data.label : node.id;
 			ctx.fillText(text, s.x - boxWidth/2 + 5, s.y - 8);
 
