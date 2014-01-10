@@ -640,7 +640,7 @@
 		this.clear = clear;
 		this.drawEdge = drawEdge;
 		this.drawNode = drawNode;
-		this.onRenderStop  = onRenderStop;
+		this.onRenderStop = onRenderStop;
 		this.onRenderStart = onRenderStart;
 
 		this.layout.graph.addGraphListener(this);
@@ -658,7 +658,7 @@
 	 * At least the built-in ForceDirected layout behaves in this way.
 	 *
 	 * @param done An optional callback function that gets executed when the springy algorithm stops,
-	 *             either because it ended or because stop() was called.
+	 * either because it ended or because stop() was called.
 	 */
 	Renderer.prototype.start = function(done) {
 		var t = this;
