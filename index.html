@@ -117,7 +117,7 @@
     <p>It means that springy uses some real world physics to try and figure out how to show a network graph in a way that looks good.</p>
     <p>Here's an example:</p>
 
-    <canvas id="demo" class="example" width="650" height="288"></canvas>
+    <canvas id="demo" class="example" width="650" height="350"></canvas>
   </div>
 
   <!-- Here's a Springy worked example right here in the source. Enjoy! :-) -->
@@ -131,16 +131,18 @@
   var node2 = graph.newNode({label: 'Sicilian Fir'});
   var node3 = graph.newNode({label: 'Sumatran Pine'});
   var node4 = graph.newNode({label: 'Japanese Larch'});
+  var node5 = graph.newNode({label: 'Giant Sequoia'});
 
   // connect them with an edge
   graph.newEdge(node1, node2);
   graph.newEdge(node2, node3);
   graph.newEdge(node2, node4);
   graph.newEdge(node1, node4);
+  graph.newEdge(node1, node5);
 
   var layout = new Springy.Layout.ForceDirected(
     graph,
-    200.0, // Spring stiffness
+    300.0, // Spring stiffness
     400.0, // Node repulsion
     0.5 // Damping
   );
@@ -150,11 +152,11 @@
 
   var renderer = new Springy.Renderer(layout,
     function clear() {
-      ctx.clearRect(0, 0, 650, 300);
+      ctx.clearRect(0, 0, 650, 350);
     },
     function drawEdge(edge, p1, p2) {
       ctx.save();
-      ctx.translate(325, 144);
+      ctx.translate(650/2, 350/2);
 
       ctx.strokeStyle = 'rgba(0,0,0,0.15)';
       ctx.lineWidth = 3.0;
@@ -168,14 +170,14 @@
     },
     function drawNode(node, p) {
       ctx.save();
-      ctx.translate(325, 144);
+      ctx.translate(650/2, 350/2);
 
       ctx.font = "18px 'IM Fell English', 'Times New Roman', serif";
 
       var width = ctx.measureText(node.data.label).width;
       var x = p.x * 50;
       var y = p.y * 40;
-      ctx.clearRect(x - width / 2.0 - 5, y - 12, width + 10, 24);
+      ctx.clearRect(x - width / 2.0 - 2, y - 10, width + 4, 20);
       ctx.fillStyle = '#000000';
       ctx.fillText(node.data.label, x - width / 2.0, y + 5);
 
