@@ -27,7 +27,8 @@ Copyright (c) 2010 Dennis Hotson
 
 jQuery.fn.springy = function(params) {
 	var graph = this.graph = params.graph || new Springy.Graph();
-
+        var nodeFont = "12px Verdana, sans-serif";
+	var edgeFont = "8px Verdana, sans-serif";
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
@@ -126,7 +127,7 @@ jQuery.fn.springy = function(params) {
 			return this._width[text];
 
 		ctx.save();
-		ctx.font = "16px Verdana, sans-serif";
+		ctx.font = (this.data.font !== undefined) ? this.data.font : nodeFont;
 		var width = ctx.measureText(text).width + 10;
 		ctx.restore();
 
@@ -232,7 +233,7 @@ jQuery.fn.springy = function(params) {
 				ctx.save();
 				ctx.textAlign = "center";
 				ctx.textBaseline = "top";
-				ctx.font = "10px Helvetica, sans-serif";
+				ctx.font = (edge.data.font !== undefined) ? edge.data.font : edgeFont;
 				ctx.fillStyle = "#5BA6EC";
 				ctx.fillText(text, (x1+x2)/2, (y1+y2)/2);
 				ctx.restore();
@@ -262,7 +263,7 @@ jQuery.fn.springy = function(params) {
 
 			ctx.textAlign = "left";
 			ctx.textBaseline = "top";
-			ctx.font = "16px Verdana, sans-serif";
+			ctx.font = (node.data.font !== undefined) ? node.data.font : nodeFont;
 			ctx.fillStyle = "#000000";
 			ctx.font = "16px Verdana, sans-serif";
 			var text = (node.data.label !== undefined) ? node.data.label : node.id;
