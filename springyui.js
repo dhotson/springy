@@ -167,7 +167,8 @@ jQuery.fn.springy = function(params) {
 				}
 			}
 
-			var spacing = 6.0;
+			//change default to  10.0 to allow text fit between edges
+			var spacing = 10.0; //was 6.0 before
 
 			// Figure out how far off center the line should be drawn
 			var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
@@ -235,7 +236,11 @@ jQuery.fn.springy = function(params) {
 				ctx.textBaseline = "top";
 				ctx.font = (edge.data.font !== undefined) ? edge.data.font : edgeFont;
 				ctx.fillStyle = "#5BA6EC";
-				ctx.fillText(text, (x1+x2)/2, (y1+y2)/2);
+				var xText = (s1.x+s2.x)/2;
+				var yText = (s1.y+s2.y)/2;
+				ctx.translate(xText, yText);
+				ctx.rotate(getTextAngle(s1.x,s1.y,s2.x,s2.y));
+				ctx.fillText(text, 0,-2);
 				ctx.restore();
 			}
 
@@ -275,6 +280,12 @@ jQuery.fn.springy = function(params) {
 
 	renderer.start();
 
+	// return angle of text in radian
+	function getTextAngle(x1, y1, x2, y2){
+		var tan = (y2-y1)/(x2-x1);
+		return Math.atan(tan);	
+	}
+	
 	// helpers for figuring out where to draw arrows
 	function intersect_line_line(p1, p2, p3, p4) {
 		var denom = ((p4.y - p3.y)*(p2.x - p1.x) - (p4.x - p3.x)*(p2.y - p1.y));
