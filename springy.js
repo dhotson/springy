@@ -31,7 +31,8 @@
 
 	// Establish the root object, `window` in the browser, or `global` on the server.
 	var root = this;
-
+	var itemCount = 0; 
+	 
 	// The top-level namespace. All public Springy classes and modules will
 	// be attached to this. Exported for both CommonJS and the browser.
 	var Springy;
@@ -338,7 +339,7 @@
 	Layout.ForceDirected.prototype.point = function(node) {
 		if (!(node.id in this.nodePoints)) {
 			var mass = (node.data.mass !== undefined) ? node.data.mass : 1.0;
-			this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
+			this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.randomlyDiagonal(), mass);
 		}
 
 		return this.nodePoints[node.id];
@@ -569,8 +570,11 @@
 		this.y = y;
 	};
 
-	Vector.random = function() {
-		return new Vector(10.0 * (Math.random() - 0.5), 10.0 * (Math.random() - 0.5));
+	Vector.randomlyDiagonal = function() {
+		//return new Vector(10.0 * (Math.random() - 0.5), 10.0 * (Math.random() - 0.5));
+		itemCount += 1;
+        	return new Vector(3.0 * (itemCount*3 - 0.5) + Math.random()%10, 3.0 * (itemCount*3 - 0.5)+ Math.random()%10); //ADDED PER
+        	
 	};
 
 	Vector.prototype.add = function(v2) {
