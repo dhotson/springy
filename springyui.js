@@ -1,5 +1,5 @@
 /**
-Copyright (c) 2010 Dennis Hotson
+Copyright (c) 2010 Dennis Hotson, 2014 Taylor Smith
 
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
@@ -33,6 +33,7 @@ jQuery.fn.springy = function(params) {
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
 	var nodeSelected = params.nodeSelected || null;
+	var nodeImages = {};
 
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
@@ -121,25 +122,61 @@ jQuery.fn.springy = function(params) {
 		dragged = null;
 	});
 
-	Springy.Node.prototype.getWidth = function() {
-		var text = (this.data.label !== undefined) ? this.data.label : this.id;
-		if (this._width && this._width[text])
-			return this._width[text];
+	var getTextWidth = function(node) {
+		var text = (node.data.label !== undefined) ? node.data.label : node.id;
+		if (node._width && node._width[text])
+			return node._width[text];
 
 		ctx.save();
-		ctx.font = (this.data.font !== undefined) ? this.data.font : nodeFont;
-		var width = ctx.measureText(text).width + 10;
+		ctx.font = (node.data.font !== undefined) ? node.data.font : nodeFont;
+		var width = ctx.measureText(text).width;
 		ctx.restore();
 
-		this._width || (this._width = {});
-		this._width[text] = width;
+		node._width || (node._width = {});
+		node._width[text] = width;
 
 		return width;
 	};
 
-	Springy.Node.prototype.getHeight = function() {
-		return 20;
+	var getTextHeight = function(node) {
+		return 16;
+		// In a more modular world, this would actually read the font size, but I think leaving it a constant is sufficient for now.
+		// If you change the font size, I'd adjust this too.
 	};
+
+	var getImageWidth = function(node) {
+		var width = (node.data.image.width !== undefined) ? node.data.image.width : nodeImages[node.data.image.src].object.width;
+		return width;
+	}
+
+	var getImageHeight = function(node) {
+		var height = (node.data.image.height !== undefined) ? node.data.image.height : nodeImages[node.data.image.src].object.height;
+		return height;
+	}
+
+	Springy.Node.prototype.getHeight = function() {
+		var height;
+		if (this.data.image == undefined) {
+			height = getTextHeight(this);
+		} else {
+			if (this.data.image.src in nodeImages && nodeImages[this.data.image.src].loaded) {
+				height = getImageHeight(this);
+			} else {height = 10;}
+		}
+		return height;
+	}
+
+	Springy.Node.prototype.getWidth = function() {
+		var width;
+		if (this.data.image == undefined) {
+			width = getTextWidth(this);
+		} else {
+			if (this.data.image.src in nodeImages && nodeImages[this.data.image.src].loaded) {
+				width = getImageWidth(this);
+			} else {width = 10;}
+		}
+		return width;
+	}
 
 	var renderer = this.renderer = new Springy.Renderer(layout,
 		function clear() {
@@ -173,11 +210,14 @@ jQuery.fn.springy = function(params) {
 			// Figure out how far off center the line should be drawn
 			var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
 
+			var paddingX = 6;
+			var paddingY = 6;
+
 			var s1 = toScreen(p1).add(offset);
 			var s2 = toScreen(p2).add(offset);
 
-			var boxWidth = edge.target.getWidth();
-			var boxHeight = edge.target.getHeight();
+			var boxWidth = edge.target.getWidth() + paddingX;
+			var boxHeight = edge.target.getHeight() + paddingY;
 
 			var intersection = intersect_line_box(s1, s2, {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
 
@@ -249,11 +289,18 @@ jQuery.fn.springy = function(params) {
 
 			ctx.save();
 
-			var boxWidth = node.getWidth();
-			var boxHeight = node.getHeight();
+			// Pulled out the padding aspect sso that the size functions could be used in multiple places
+			// These should probably be settable by the user (and scoped higher) but this suffices for now
+			var paddingX = 6;
+			var paddingY = 6;
+
+			var contentWidth = node.getWidth();
+			var contentHeight = node.getHeight();
+			var boxWidth = contentWidth + paddingX;
+			var boxHeight = contentHeight + paddingY;
 
 			// clear background
-			ctx.clearRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
+			ctx.clearRect(s.x - boxWidth/2, s.y - boxHeight/2, boxWidth, boxHeight);
 
 			// fill background
 			if (selected !== null && selected.node !== null && selected.node.id === node.id) {
@@ -263,15 +310,36 @@ jQuery.fn.springy = function(params) {
 			} else {
 				ctx.fillStyle = "#FFFFFF";
 			}
-			ctx.fillRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
+			ctx.fillRect(s.x - boxWidth/2, s.y - boxHeight/2, boxWidth, boxHeight);
 
-			ctx.textAlign = "left";
-			ctx.textBaseline = "top";
-			ctx.font = (node.data.font !== undefined) ? node.data.font : nodeFont;
-			ctx.fillStyle = "#000000";
-			var text = (node.data.label !== undefined) ? node.data.label : node.id;
-			ctx.fillText(text, s.x - boxWidth/2 + 5, s.y - 8);
-
+			if (node.data.image == undefined) {
+				ctx.textAlign = "left";
+				ctx.textBaseline = "top";
+				ctx.font = (node.data.font !== undefined) ? node.data.font : nodeFont;
+				ctx.fillStyle = "#000000";
+				var text = (node.data.label !== undefined) ? node.data.label : node.id;
+				ctx.fillText(text, s.x - contentWidth/2, s.y - contentHeight/2);
+			} else {
+				// Currently we just ignore any labels if the image object is set. One might want to extend this logic to allow for both, or other composite nodes.
+				var src = node.data.image.src;  // There should probably be a sanity check here too, but un-src-ed images aren't exaclty a disaster.
+				if (src in nodeImages) {
+					if (nodeImages[src].loaded) {
+						// Our image is loaded, so it's safe to draw
+						ctx.drawImage(nodeImages[src].object, s.x - contentWidth/2, s.y - contentHeight/2, contentWidth, contentHeight);
+					}
+				}else{
+					// First time seeing an image with this src address, so add it to our set of image objects
+					// Note: we index images by their src to avoid making too many duplicates
+					nodeImages[src] = {};
+					var img = new Image();
+					nodeImages[src].object = img;
+					img.addEventListener("load", function () {
+						// HTMLImageElement objects are very finicky about being used before they are loaded, so we set a flag when it is done
+						nodeImages[src].loaded = true;
+					});
+					img.src = src;
+				}
+			}
 			ctx.restore();
 		}
 	);
