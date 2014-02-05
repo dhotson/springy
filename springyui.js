@@ -1,5 +1,5 @@
 /**
-Copyright (c) 2010 Dennis Hotson, 2014 Taylor Smith
+Copyright (c) 2010 Dennis Hotson
 
  Permission is hereby granted, free of charge, to any person
  obtaining a copy of this software and associated documentation
