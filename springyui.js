@@ -33,6 +33,8 @@ jQuery.fn.springy = function(params) {
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
 	var nodeSelected = params.nodeSelected || null;
+    var nodeMouseUp = params.nodeMouseUp || null;
+    var nodeDoubleClick = params.nodeDoubleClick || null;
 
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
@@ -77,31 +79,48 @@ jQuery.fn.springy = function(params) {
 	var nearest = null;
 	var dragged = null;
 
+    function fireNodeEvent(method, e, callback){
+
+        var pos = jQuery(this).offset();
+        var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
+        selected = nearest = dragged = layout.nearest(p);
+
+        if (selected.node !== null) {
+            dragged.point.m = 10000.0;
+
+            if (method) {
+                method(selected.node, e);
+            }
+
+            if(callback){
+                callback(selected.node);
+            }
+
+        }
+
+        renderer.start();
+
+    }
+
 	jQuery(canvas).mousedown(function(e) {
-		var pos = jQuery(this).offset();
-		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
-		selected = nearest = dragged = layout.nearest(p);
-
-		if (selected.node !== null) {
-			dragged.point.m = 10000.0;
-
-			if (nodeSelected) {
-				nodeSelected(selected.node);
-			}
-		}
-
-		renderer.start();
+        fireNodeEvent.call(this, nodeSelected, e);
 	});
+
+    jQuery(canvas).mouseup(function(e) {
+        fireNodeEvent.call(this, nodeMouseUp, e);
+    });
 
 	// Basic double click handler
 	jQuery(canvas).dblclick(function(e) {
-		var pos = jQuery(this).offset();
-		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
-		selected = layout.nearest(p);
-		node = selected.node;
-		if (node && node.data && node.data.ondoubleclick) {
-			node.data.ondoubleclick();
-		}
+
+        fireNodeEvent.call(this, nodeDoubleClick, e, function(node){
+
+            if (node && node.data && node.data.ondoubleclick) {
+                node.data.ondoubleclick(e);
+            }
+
+        });
+
 	});
 
 	jQuery(canvas).mousemove(function(e) {

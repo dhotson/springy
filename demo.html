@@ -36,7 +36,16 @@ jQuery(function(){
     graph: graph,
     nodeSelected: function(node){
       console.log('Node selected: ' + JSON.stringify(node.data));
+    },
+
+    nodeMouseUp: function(node, e){
+        console.log('MouseUp on '+node.data.label);
+    },
+
+    nodeDoubleClick: function(node, e){
+        console.log('Double clicked on '+node.data.label);
     }
+
   });
 });
 </script>
