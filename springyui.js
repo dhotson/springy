@@ -34,6 +34,7 @@ jQuery.fn.springy = function(params) {
 	var damping = params.damping || 0.5;
 	var nodeSelected = params.nodeSelected || null;
 	var nodeImages = {};
+	var edgeLabelsUpright = true;
 
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
@@ -276,9 +277,15 @@ jQuery.fn.springy = function(params) {
 				ctx.textBaseline = "top";
 				ctx.font = (edge.data.font !== undefined) ? edge.data.font : edgeFont;
 				ctx.fillStyle = stroke;
-				var textPos = s1.add(s2).divide(2).add(normal.multiply(-8));
+				var angle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
+				var displacement = -8;
+				if (edgeLabelsUpright && (angle > Math.PI/2 || angle < -Math.PI/2)) {
+					displacement = 8;
+					angle += Math.PI;
+				}
+				var textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
 				ctx.translate(textPos.x, textPos.y);
-				ctx.rotate(Math.atan2(s2.y - s1.y, s2.x - s1.x));
+				ctx.rotate(angle);
 				ctx.fillText(text, 0,-2);
 				ctx.restore();
 			}
