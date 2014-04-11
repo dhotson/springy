@@ -487,7 +487,7 @@
 	 * Start simulation if it's not running already.
 	 * In case it's running then the call is ignored, and none of the callbacks passed is ever executed.
 	 */
-	Layout.ForceDirected.prototype.start = function(render, onRenderStop, onRenderStart) {
+	Layout.ForceDirected.prototype.start = function(render, onRenderStart, onRenderStop) {
 		var t = this;
 
 		if (this._started) return;
@@ -635,13 +635,13 @@
 	 * @param onRenderStop optional callback function that gets executed whenever rendering stops.
 	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
 	 */
-	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStop, onRenderStart) {
+	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStart, onRenderStop) {
 		this.layout = layout;
 		this.clear = clear;
 		this.drawEdge = drawEdge;
 		this.drawNode = drawNode;
-		this.onRenderStop = onRenderStop;
 		this.onRenderStart = onRenderStart;
+		this.onRenderStop = onRenderStop;
 
 		this.layout.graph.addGraphListener(this);
 	}
