@@ -1,5 +1,5 @@
 /**
- * Springy v2.3.0
+ * Springy v2.5.0
  *
  * Copyright (c) 2010-2013 Dennis Hotson
  *
@@ -325,11 +325,12 @@
 
 	// -----------
 	var Layout = Springy.Layout = {};
-	Layout.ForceDirected = function(graph, stiffness, repulsion, damping) {
+	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold) {
 		this.graph = graph;
 		this.stiffness = stiffness; // spring stiffness constant
 		this.repulsion = repulsion; // repulsion constant
 		this.damping = damping; // velocity damping factor
+		this.minEnergyThreshold = minEnergyThreshold || 0.01; //threshold used to determine render stop 
 
 		this.nodePoints = {}; // keep track of points associated with nodes
 		this.edgeSprings = {}; // keep track of springs associated with edges
@@ -497,18 +498,14 @@
 		if (onRenderStart !== undefined) { onRenderStart(); }
 
 		Springy.requestAnimationFrame(function step() {
-			t.applyCoulombsLaw();
-			t.applyHookesLaw();
-			t.attractToCentre();
-			t.updateVelocity(0.03);
-			t.updatePosition(0.03);
+			t.tick(0.03);
 
 			if (render !== undefined) {
 				render();
 			}
 
 			// stop simulation when energy of the system goes below a threshold
-			if (t._stop || t.totalEnergy() < 0.01) {
+			if (t._stop || t.totalEnergy() < t.minEnergyThreshold) {
 				t._started = false;
 				if (onRenderStop !== undefined) { onRenderStop(); }
 			} else {
@@ -520,6 +517,14 @@
 	Layout.ForceDirected.prototype.stop = function() {
 		this._stop = true;
 	}
+
+	Layout.ForceDirected.prototype.tick = function(timestep) {
+		this.applyCoulombsLaw();
+		this.applyHookesLaw();
+		this.attractToCentre();
+		this.updateVelocity(timestep);
+		this.updatePosition(timestep);
+	};
 
 	// Find the nearest point to a particular position
 	Layout.ForceDirected.prototype.nearest = function(pos) {
