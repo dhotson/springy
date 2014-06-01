@@ -498,11 +498,7 @@
 		if (onRenderStart !== undefined) { onRenderStart(); }
 
 		Springy.requestAnimationFrame(function step() {
-			t.applyCoulombsLaw();
-			t.applyHookesLaw();
-			t.attractToCentre();
-			t.updateVelocity(0.03);
-			t.updatePosition(0.03);
+			t.tick(0.03);
 
 			if (render !== undefined) {
 				render();
@@ -521,6 +517,14 @@
 	Layout.ForceDirected.prototype.stop = function() {
 		this._stop = true;
 	}
+
+	Layout.ForceDirected.prototype.tick = function(timestep) {
+		this.applyCoulombsLaw();
+		this.applyHookesLaw();
+		this.attractToCentre();
+		this.updateVelocity(timestep);
+		this.updatePosition(timestep);
+	};
 
 	// Find the nearest point to a particular position
 	Layout.ForceDirected.prototype.nearest = function(pos) {
