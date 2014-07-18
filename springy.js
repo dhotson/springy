@@ -677,7 +677,7 @@
 			t.layout.eachNode(function(node, point) {
 				t.drawNode(node, point.p);
 			});
-		}, this.onRenderStart, this.onRenderStop);
+		}, this.onRenderStop, this.onRenderStart);
 	};
 
 	Renderer.prototype.stop = function() {
