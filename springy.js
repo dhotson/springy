@@ -1,5 +1,5 @@
 /**
- * Springy v2.5.0
+ * Springy v2.6.0
  *
  * Copyright (c) 2010-2013 Dennis Hotson
  *
@@ -677,7 +677,7 @@
 			t.layout.eachNode(function(node, point) {
 				t.drawNode(node, point.p);
 			});
-		}, this.onRenderStart, this.onRenderStop);
+		}, this.onRenderStop, this.onRenderStart);
 	};
 
 	Renderer.prototype.stop = function() {

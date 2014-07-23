@@ -32,6 +32,7 @@ jQuery.fn.springy = function(params) {
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
+	var minEnergyThreshold = params.minEnergyThreshold || 0.00001,
 	var nodeSelected = params.nodeSelected || null;
 	var nodeImages = {};
 	var edgeLabelsUpright = true;
@@ -39,7 +40,7 @@ jQuery.fn.springy = function(params) {
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
 
-	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping);
+	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold);
 
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
