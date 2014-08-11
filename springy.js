@@ -25,12 +25,12 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-(function() {
+;(function() {
 	// Enable strict mode for EC5 compatible browsers
 	"use strict";
 
 	// Establish the root object, `window` in the browser, or `global` on the server.
-	var root = this;
+	var root = Function('return this')();
 
 	// The top-level namespace. All public Springy classes and modules will
 	// be attached to this. Exported for both CommonJS and the browser.
@@ -720,4 +720,4 @@
 		}
 		return true;
 	};
-}).call(this);
+})();
