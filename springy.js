@@ -1,5 +1,5 @@
 /**
- * Springy v2.7.0
+ * Springy v2.7.1
  *
  * Copyright (c) 2010-2013 Dennis Hotson
  *
@@ -27,7 +27,7 @@
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
-        define(['b'], function (b) {
+        define(function () {
             return (root.returnExportsGlobal = factory());
         });
     } else if (typeof exports === 'object') {

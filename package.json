@@ -1,6 +1,6 @@
 {
   "name": "springy",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "description": "A force directed graph layout algorithm in JavaScript.",
   "main": "springy.js",
   "scripts": {
