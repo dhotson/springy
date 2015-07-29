@@ -324,7 +324,7 @@ jQuery.fn.springy = function(params) {
 				ctx.textAlign = "left";
 				ctx.textBaseline = "top";
 				ctx.font = (node.data.font !== undefined) ? node.data.font : nodeFont;
-				ctx.fillStyle = "#000000";
+				ctx.fillStyle = (node.data.color !== undefined) ? node.data.color : "#000000";
 				var text = (node.data.label !== undefined) ? node.data.label : node.id;
 				ctx.fillText(text, s.x - contentWidth/2, s.y - contentHeight/2);
 			} else {
