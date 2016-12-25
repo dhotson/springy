@@ -73,31 +73,31 @@ Springy 1.2+ also accepts JSON, see
 To load JSON with node and edge attributes, override the
 addNodes function thus:
 
-  graphJSONRich = {
-    "nodes": [
-      {"label":"mark","color":"#ff0000"},
-      {"label":"higgs"},
-      {"label": "other"},
-      {"label":"etc"}
-    ],
-    "edges": [
-      ["mark", "higgs",{"color":"#00ff00"}],
-      ["mark", "etc"],
-      ["mark", "other"]
-    ]
-  };
+    graphJSONRich = {
+      "nodes": [
+	{"label":"mark","color":"#ff0000"},
+	{"label":"higgs"},
+	{"label": "other"},
+	{"label":"etc"}
+      ],
+      "edges": [
+	["mark", "higgs",{"color":"#00ff00"}],
+	["mark", "etc"],
+	["mark", "other"]
+      ]
+    };
 
-  var graph = new Springy.Graph();
-  graph.addNodes = function() {
-    // accepts variable number of arguments, where each argument
-    // is a string that becomes both node identifier and label
-    for (var i = 0; i < arguments.length; i++) {
-      var arg = arguments[i];
-      var node = new Springy.Node(arg["label"], arg);
-      this.addNode(node);
-    }
-  };
-  graph.loadJSON(graphJSONRich);
+    var graph = new Springy.Graph();
+    graph.addNodes = function() {
+      // accepts variable number of arguments, where each argument
+      // is a string that becomes both node identifier and label
+      for (var i = 0; i < arguments.length; i++) {
+	var arg = arguments[i];
+	var node = new Springy.Node(arg["label"], arg);
+	this.addNode(node);
+      }
+    };
+    graph.loadJSON(graphJSONRich);
 
 Advanced Drawing
 ----
