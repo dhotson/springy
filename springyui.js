@@ -121,6 +121,8 @@ jQuery.fn.springy = function(params) {
 	});
 
 	jQuery(window).bind('mouseup',function(e) {
+		dragged.point.m = 1;
+		renderer.start();
 		dragged = null;
 	});
 
