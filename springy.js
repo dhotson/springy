@@ -494,7 +494,7 @@
 	 * Start simulation if it's not running already.
 	 * In case it's running then the call is ignored, and none of the callbacks passed is ever executed.
 	 */
-	Layout.ForceDirected.prototype.start = function(render, onRenderStop, onRenderStart) {
+	Layout.ForceDirected.prototype.start = function(render, onRenderStart, onRenderStop) {
 		var t = this;
 
 		if (this._started) return;
