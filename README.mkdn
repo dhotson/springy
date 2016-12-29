@@ -88,7 +88,7 @@ thus:
     };
 
     var graph = new Springy.Graph();
-    graph.loadJSONRich(graphJSONRich);
+    graph.loadJSONRich(graphJSONRich); 
 
 Advanced Drawing
 ----
