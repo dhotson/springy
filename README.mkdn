@@ -76,6 +76,7 @@ Springy 1.2+ also accepts JSON with node attributes, see
     graph.loadJSON(graphJSON);
 
 
+
 Advanced Drawing
 ----
 
