@@ -175,22 +175,15 @@
 
 		{
 			"nodes": [
-<<<<<<< d55fbb12a2a8d453b6747befa798eb588eb06d46
 				["center", {"label":"Center","color":"#ff0000"}],
-=======
-				"center",
->>>>>>> Rolling back -- again.
 				"left",
 				"right",
 				"up",
 				"satellite"
 			],
 			"edges": [
-<<<<<<< d55fbb12a2a8d453b6747befa798eb588eb06d46
 				["center", "left", {"label":"Foo"},"color":"#0000ff"],
-=======
-				["center", "left"],
->>>>>>> Rolling back -- again.
+
 				["center", "right"],
 				["center", "up"]
 			]
