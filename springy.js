@@ -96,6 +96,16 @@
 		}
 	};
 
+  Graph.prototype.addNodesRich = function() {
+        // accepts variable number of arguments, where each argument
+        // is a string that becomes both node identifier and label
+        for (var i = 0; i < arguments.length; i++) {
+                var arg = arguments[i];
+                var node = new Node(arg["label"], arg);
+                this.addNode(node);
+        }
+  };
+
 	Graph.prototype.addEdge = function(edge) {
 		var exists = false;
 		this.edges.forEach(function(e) {
@@ -192,6 +202,39 @@
 			this.addEdges.apply(this, json['edges']);
 		}
 	}
+
+  // add nodes and edges from JSON object - Rich version with
+  // node and edge attributes
+  /* Usage notes:
+
+    var graphJSONRich = {
+        "nodes": [
+    {"label":"mark","color":"#ff0000"},
+    {"label":"higgs"},
+    {"label": "other"},
+    {"label":"etc"}
+        ],
+        "edges": [
+    ["mark", "higgs",{"color":"#00ff00"}],
+    ["mark", "etc"],
+    ["mark", "other"]
+        ]
+      };
+
+      var graph = new Springy.Graph();
+      graph.loadJSONRich(graphJSONRich);
+  */
+  Graph.prototype.loadJSONRich = function(json) {
+          // parse if a string is passed (EC5+ browsers)
+          if (typeof json == 'string' || json instanceof String) {
+                  json = JSON.parse( json );
+          }
+
+          if ('nodes' in json || 'edges' in json) {
+                  this.addNodesRich.apply(this, json['nodes']);
+                  this.addEdges.apply(this, json['edges']);
+          }
+  }
 
 
 	// find the edges from node1 to node2
