@@ -208,43 +208,6 @@
 		}
 	}
 
-<<<<<<< d55fbb12a2a8d453b6747befa798eb588eb06d46
-=======
-  // add nodes and edges from JSON object - Rich version with
-  // node and edge attributes
-  /* Usage notes:
-
-    var graphJSONRich = {
-        "nodes": [
-    {"label":"mark","color":"#ff0000"},
-    {"label":"higgs"},
-    {"label": "other"},
-    {"label":"etc"}
-        ],
-        "edges": [
-    ["mark", "higgs",{"color":"#00ff00"}],
-    ["mark", "etc"],
-    ["mark", "other"]
-        ]
-      };
-
-      var graph = new Springy.Graph();
-      graph.loadJSONRich(graphJSONRich);
-  */
-  Graph.prototype.loadJSONRich = function(json) {
-          // parse if a string is passed (EC5+ browsers)
-          if (typeof json == 'string' || json instanceof String) {
-                  json = JSON.parse( json );
-          }
-
-          if ('nodes' in json || 'edges' in json) {
-                  this.addNodesRich.apply(this, json['nodes']);
-                  this.addEdges.apply(this, json['edges']);
-          }
-  }
-
-
->>>>>>> Rolling back -- again.
 	// find the edges from node1 to node2
 	Graph.prototype.getEdges = function(node1, node2) {
 		if (node1.id in this.adjacency
