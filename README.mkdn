@@ -70,8 +70,8 @@ Springy 1.2+ also accepts JSON, see
     var graph = new Springy.Graph();
     graph.loadJSON(graphJSON);
 
-To load JSON with node and edge attributes, override the
-addNodes function thus:
+To load JSON with node and edge attributes, use loadJSONRich
+thus:
 
     graphJSONRich = {
       "nodes": [
@@ -88,16 +88,7 @@ addNodes function thus:
     };
 
     var graph = new Springy.Graph();
-    graph.addNodes = function() {
-      // accepts variable number of arguments, where each argument
-      // is a string that becomes both node identifier and label
-      for (var i = 0; i < arguments.length; i++) {
-	var arg = arguments[i];
-	var node = new Springy.Node(arg["label"], arg);
-	this.addNode(node);
-      }
-    };
-    graph.loadJSON(graphJSONRich);
+    graph.loadJSONRich(graphJSONRich);
 
 Advanced Drawing
 ----
