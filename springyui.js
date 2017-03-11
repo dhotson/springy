@@ -23,7 +23,24 @@ Copyright (c) 2010 Dennis Hotson
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
-(function() {
+let Springy = require('./springy_impl');
+
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(function () {
+            return (root.returnExportsGlobal = factory);
+        });
+    } else if (typeof exports === 'object') {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like enviroments that support module.exports,
+        // like Node.
+        module.exports = factory;
+    } else {
+        // Browser globals
+        root.SpringyUI = factory;
+    }
+}(this, function(jQuery) {
 
 jQuery.fn.springy = function(params) {
 	var graph = this.graph = params.graph || new Springy.Graph();
@@ -390,5 +407,4 @@ jQuery.fn.springy = function(params) {
 
 	return this;
 }
-
-})();
+}));
