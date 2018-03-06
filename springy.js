@@ -645,16 +645,16 @@
 	 * Renderer handles the layout rendering loop
 	 * @param onRenderStop optional callback function that gets executed whenever rendering stops.
 	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
-	 * @param onRender optional callback function that gets executed after each frame is rendered.
+	 * @param onRenderFrame optional callback function that gets executed after each frame is rendered.
 	 */
-	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStop, onRenderStart, onRender) {
+	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStop, onRenderStart, onRenderFrame) {
 		this.layout = layout;
 		this.clear = clear;
 		this.drawEdge = drawEdge;
 		this.drawNode = drawNode;
 		this.onRenderStop = onRenderStop;
 		this.onRenderStart = onRenderStart;
-		this.onRender = onRender;
+		this.onRenderFrame = onRenderFrame;
 
 		this.layout.graph.addGraphListener(this);
 	}
@@ -686,7 +686,7 @@
 				t.drawNode(node, point.p);
 			});
 			
-			if (t.onRender !== undefined) { t.onRender(); }
+			if (t.onRenderFrame !== undefined) { t.onRenderFrame(); }
 		}, this.onRenderStop, this.onRenderStart);
 	};
 
