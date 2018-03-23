@@ -90,11 +90,18 @@
 		// accepts variable number of arguments, where each argument
 		// is a string that becomes both node identifier and label
 		for (var i = 0; i < arguments.length; i++) {
-			var name = arguments[i];
-			var node = new Node(name, {label:name});
+			var arg = arguments[i];
+			var node;
+			if (typeof arg === "string") {
+				node = new Node(arg, {label:arg});
+			} else {
+				node = new Node(arg[0], arg[1]);
+			}
+
 			this.addNode(node);
 		}
 	};
+
 
 	Graph.prototype.addEdge = function(edge) {
 		var exists = false;
@@ -168,14 +175,15 @@
 
 		{
 			"nodes": [
-				"center",
+				["center", {"label":"Center","color":"#ff0000"}],
 				"left",
 				"right",
 				"up",
 				"satellite"
 			],
 			"edges": [
-				["center", "left"],
+				["center", "left", {"label":"Foo"},"color":"#0000ff"],
+
 				["center", "right"],
 				["center", "up"]
 			]
@@ -192,7 +200,6 @@
 			this.addEdges.apply(this, json['edges']);
 		}
 	}
-
 
 	// find the edges from node1 to node2
 	Graph.prototype.getEdges = function(node1, node2) {

@@ -55,13 +55,18 @@ Springy 1.1+ supports simplified API for adding nodes and edges, see
         ['mark', 'other']
     );
 
-Springy 1.2+ also accepts JSON, see
+Springy 1.2+ also accepts JSON with node attributes, see
 [demo-json.html](http://dhotson.github.com/springy/demo-json.html):
 
     graphJSON = {
-      "nodes": ["mark", "higgs", "other", "etc"],
+      "nodes": [
+        ["mark", {"label":"Mark", "color":"#0000ff"}],
+        "higgs",
+        "other",
+        "etc"
+      ],
       "edges": [
-        ["mark", "higgs"],
+        ["mark", "higgs", {"label":"Foo", "color":"#ff0000"}],
         ["mark", "etc"],
         ["mark", "other"]
       ]
