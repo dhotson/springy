@@ -90,9 +90,10 @@
 		// accepts variable number of arguments, where each argument
 		// is a string that becomes both node identifier and label
 		for (var i = 0; i < arguments.length; i++) {
-			var name = arguments[i];
-			var node = new Node(name, {label:name});
-			this.addNode(node);
+			var e = arguments[i];
+			var name = e[0];
+			var attr = e[1];
+			this.newNode(name, attr);
 		}
 	};
 
@@ -145,8 +146,8 @@
 		}
 	};
 
-	Graph.prototype.newNode = function(data) {
-		var node = new Node(this.nextNodeId++, data);
+	Graph.prototype.newNode = function(name, data) {
+		var node = new Node(name, Object.assign( {label:name},data) );
 		this.addNode(node);
 		return node;
 	};
@@ -329,7 +330,7 @@
 	var Layout = Springy.Layout = {};
 	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed) {
 		this.graph = graph;
-		this.stiffness = stiffness; // spring stiffness constant
+		this.stiffness = stiffness ; // spring stiffness constant
 		this.repulsion = repulsion; // repulsion constant
 		this.damping = damping; // velocity damping factor
 		this.minEnergyThreshold = minEnergyThreshold || 0.01; //threshold used to determine render stop
@@ -342,7 +343,9 @@
 	Layout.ForceDirected.prototype.point = function(node) {
 		if (!(node.id in this.nodePoints)) {
 			var mass = (node.data.mass !== undefined) ? node.data.mass : 1.0;
-			this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
+			// this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
+			var vector = (node.data.xpos !== undefined) ? new Vector(node.data.xpos,-node.data.ypos) : Vector.random();
+			this.nodePoints[node.id] = new Layout.ForceDirected.Point(vector, mass);
 		}
 
 		return this.nodePoints[node.id];
@@ -350,7 +353,8 @@
 
 	Layout.ForceDirected.prototype.spring = function(edge) {
 		if (!(edge.id in this.edgeSprings)) {
-			var length = (edge.data.length !== undefined) ? edge.data.length : 1.0;
+			var d = this.point(edge.source).p.subtract(this.point(edge.target).p); 
+			var length = (edge.data.length !== undefined) ? edge.data.length : d.magnitude();
 
 			var existingSpring = false;
 
@@ -525,9 +529,9 @@
 	}
 
 	Layout.ForceDirected.prototype.tick = function(timestep) {
-		this.applyCoulombsLaw();
+		// this.applyCoulombsLaw();
 		this.applyHookesLaw();
-		this.attractToCentre();
+		// this.attractToCentre();
 		this.updateVelocity(timestep);
 		this.updatePosition(timestep);
 	};
@@ -550,9 +554,8 @@
 
 	// returns [bottomleft, topright]
 	Layout.ForceDirected.prototype.getBoundingBox = function() {
-		var bottomleft = new Vector(-2,-2);
-		var topright = new Vector(2,2);
-
+		var bottomleft = new Vector(Infinity,Infinity);
+		var topright = new Vector(-Infinity,-Infinity);
 		this.eachNode(function(n, point) {
 			if (point.p.x < bottomleft.x) {
 				bottomleft.x = point.p.x;
