@@ -28,7 +28,7 @@ Copyright (c) 2010 Dennis Hotson
 jQuery.fn.springy = function(params) {
 	var graph = this.graph = params.graph || new Springy.Graph();
 	var nodeFont = "16px Verdana, sans-serif";
-	var edgeFont = "8px Verdana, sans-serif";
+	var edgeFont = "14px Verdana, sans-serif";
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
@@ -44,7 +44,7 @@ jQuery.fn.springy = function(params) {
 
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
-	var targetBB = {bottomleft: new Springy.Vector(-2, -2), topright: new Springy.Vector(2, 2)};
+	var targetBB = {bottomleft: new Springy.Vector(0, 0), topright: new Springy.Vector(1000, 1000)};
 
 	// auto adjusting bounding box
 	Springy.requestAnimationFrame(function adjust() {
@@ -287,7 +287,7 @@ jQuery.fn.springy = function(params) {
 				var textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
 				ctx.translate(textPos.x, textPos.y);
 				ctx.rotate(angle);
-				ctx.fillText(text, 0,-2);
+				ctx.fillText(text, 0, -8);
 				ctx.restore();
 			}
 
