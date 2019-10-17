@@ -24,6 +24,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+"use strict";
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
@@ -327,22 +328,27 @@
 
 	// -----------
 	var Layout = Springy.Layout = {};
-	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed) {
+	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, zoomFactor) {
 		this.graph = graph;
 		this.stiffness = stiffness; // spring stiffness constant
 		this.repulsion = repulsion; // repulsion constant
 		this.damping = damping; // velocity damping factor
 		this.minEnergyThreshold = minEnergyThreshold || 0.01; //threshold used to determine render stop
 		this.maxSpeed = maxSpeed || Infinity; // nodes aren't allowed to exceed this speed
-
+		this.fontsize = fontsize || 8.0;
+		this.scaleFactor = 1.025;	// scale factor for each wheel click.
+		this.zoomFactor = zoomFactor || 1.0;	// current zoom factor for the whole canvas.
 		this.nodePoints = {}; // keep track of points associated with nodes
 		this.edgeSprings = {}; // keep track of springs associated with edges
 	};
 
 	Layout.ForceDirected.prototype.point = function(node) {
 		if (!(node.id in this.nodePoints)) {
-			var mass = (node.data.mass !== undefined) ? node.data.mass : 1.0;
-			this.nodePoints[node.id] = new Layout.ForceDirected.Point(Vector.random(), mass);
+			var mass = (node.data.mass !== undefined) ? parseFloat(node.data.mass) : 1.0;
+			// DS: load positions from user data
+			var x = (node.data.x !== undefined) ? parseFloat(node.data.x) : 10.0 * (Math.random() - 0.5);
+			var y = (node.data.y !== undefined) ? parseFloat(node.data.y) : 10.0 * (Math.random() - 0.5);
+			this.nodePoints[node.id] = new Layout.ForceDirected.Point(new Vector(x, y), mass);
 		}
 
 		return this.nodePoints[node.id];
@@ -416,7 +422,7 @@
 				if (point1 !== point2)
 				{
 					var d = point1.p.subtract(point2.p);
-					var distance = d.magnitude() + 0.1; // avoid massive forces at small distances (and divide by zero)
+                	var distance = d.magnitude() + 0.3; // DS 0.1 is too small: avoid massive forces at small distances (and divide by zero)
 					var direction = d.normalise();
 
 					// apply force to each end point
@@ -478,16 +484,25 @@
 		return energy;
 	};
 
+	Layout.ForceDirected.prototype.getNodePositions = function() {
+		var nodes_array = [];
+		this.eachNode(function(node, point) {
+			var element = {id:node.data.name, x:point.p.x, y:point.p.y, mass:point.m};
+			nodes_array.push(element);
+		});
+		return nodes_array;
+	};
+
 	var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }; // stolen from coffeescript, thanks jashkenas! ;-)
 
-	Springy.requestAnimationFrame = __bind(this.requestAnimationFrame ||
-		this.webkitRequestAnimationFrame ||
-		this.mozRequestAnimationFrame ||
-		this.oRequestAnimationFrame ||
-		this.msRequestAnimationFrame ||
+	Springy.requestAnimationFrame = __bind(window.requestAnimationFrame ||
+		window.webkitRequestAnimationFrame ||
+		window.mozRequestAnimationFrame ||
+		window.oRequestAnimationFrame ||
+		window.msRequestAnimationFrame ||
 		(function(callback, element) {
-			this.setTimeout(callback, 10);
-		}), this);
+			window.setTimeout(callback, 10);
+		}), window);
 
 
 	/**
@@ -547,6 +562,22 @@
 
 		return min;
 	};
+
+	Layout.ForceDirected.prototype.findNode = function(node_id) {
+		var min = null;
+		var pos = new Springy.Vector(0, 0);
+		var t = this;
+		this.graph.nodes.forEach(function(n){
+			var point = t.point(n);
+			var distance = point.p.subtract(pos).magnitude();
+			if (n.data.name === node_id) {
+				min = {node: n, point: point, distance: distance, inside:true};
+				return min;
+			}
+		});
+
+		return min;
+	}
 
 	// returns [bottomleft, topright]
 	Layout.ForceDirected.prototype.getBoundingBox = function() {
@@ -647,11 +678,12 @@
 	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
 	 * @param onRenderFrame optional callback function that gets executed after each frame is rendered.
 	 */
-	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, onRenderStop, onRenderStart, onRenderFrame) {
+	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, getCanvasPos, onRenderStop, onRenderStart, onRenderFrame) {
 		this.layout = layout;
 		this.clear = clear;
 		this.drawEdge = drawEdge;
 		this.drawNode = drawNode;
+		this.getCanvasPos = getCanvasPos;
 		this.onRenderStop = onRenderStop;
 		this.onRenderStart = onRenderStart;
 		this.onRenderFrame = onRenderFrame;
@@ -661,6 +693,14 @@
 
 	Renderer.prototype.graphChanged = function(e) {
 		this.start();
+	};
+
+	Renderer.prototype.getNodePositions = function(e) {
+		return JSON.stringify(this.layout.getNodePositions());
+	};
+
+	Renderer.prototype.getCanvasPos = function(e) {
+		return this.getCanvasPos();
 	};
 
 	/**
