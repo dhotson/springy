@@ -22,30 +22,50 @@ Copyright (c) 2010 Dennis Hotson
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
 */
+"use strict";
 
 (function() {
 
 jQuery.fn.springy = function(params) {
 	var graph = this.graph = params.graph || new Springy.Graph();
-	var nodeFont = "16px Verdana, sans-serif";
-	var edgeFont = "8px Verdana, sans-serif";
+	var nodeFont = "Verdana, sans-serif";
+	var edgeFont = "Verdana, sans-serif";
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
 	var minEnergyThreshold = params.minEnergyThreshold || 0.00001;
+	var maxSpeed = params.maxSpeed || Infinity; // nodes aren't allowed to exceed this speed
 	var nodeSelected = params.nodeSelected || null;
+	var nodePositions = params.nodePositions || null;
+	var pinWeight = params.pinWeight || 1000.0;
 	var nodeImages = {};
 	var edgeLabelsUpright = true;
-
+	var edgeLabelBoxes = params.edgeLabelBoxes || false;
+	var fontsize = params.fontsize * 1.0 || Math.max(12 - Math.round(Math.sqrt(graph.nodes.length)), 4);
+	var zoomFactor = params.zoomFactor * 1.0 || 1.0;
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
 
-	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold);
+	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, zoomFactor);
+	var selected = null;
 
+	var color1 = "#7FEFFF"; // blue
+	var color2 = "#50C0FF"; 
+	var shadowColor = "rgba(50, 50, 50, 0.3)";
+	var shadowOffset = 10;
+	trackTransforms(ctx);
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
 	var targetBB = {bottomleft: new Springy.Vector(-2, -2), topright: new Springy.Vector(2, 2)};
-
+	if (params.selected) {
+		selected = layout.findNode(params.selected);
+	}
+	if (zoomFactor !== !.0) {
+		ctx.scale(zoomFactor,zoomFactor);
+	}
+	if (params.x_offset || params.y_offset) {
+		ctx.translate(params.x_offset, params.y_offset);
+	}
 	// auto adjusting bounding box
 	Springy.requestAnimationFrame(function adjust() {
 		targetBB = layout.getBoundingBox();
@@ -75,22 +95,279 @@ jQuery.fn.springy = function(params) {
 		return new Springy.Vector(px, py);
 	};
 
-	// half-assed drag and drop
-	var selected = null;
+	var set_colors = function() {
+	  var grd = ctx.createLinearGradient(-100, 100, 100, -100);
+	  grd.addColorStop(0, color1);
+	  grd.addColorStop(1, color2); 
+	  ctx.fillStyle = grd;
+	  ctx.shadowColor = shadowColor;
+	  ctx.shadowBlur = 10;
+	  ctx.shadowOffsetX = shadowOffset; 
+	  ctx.shadowOffsetY = shadowOffset;
+	};
+	
+	var box_shape = function(pos, width, height, shape){
+	  height = (height*8/14);
+	  width = width / 2.0 + height / 2.0;
+	  var hh = height / 2.0;
+	  ctx.save();
+	  ctx.translate(pos.x, pos.y);
+	  set_colors();
+	  switch(shape) {
+		case 'box3d':
+		  ctx.beginPath();
+		  ctx.moveTo(width, height); ctx.lineTo(width+hh, height-hh);
+		  ctx.lineTo(width+hh, -height-hh, 0); ctx.lineTo(width, -height);
+		  ctx.closePath();
+		  ctx.fill();
+		  ctx.stroke();
+		  ctx.beginPath();
+		  ctx.moveTo(width, -height); ctx.lineTo(-width, -height);
+		  ctx.lineTo(-width+hh, -height-hh, 0); ctx.lineTo(width+hh, -height-hh);
+		  ctx.closePath();
+		  ctx.fill();
+		  ctx.stroke();
+		break;
+		case 'folder':
+		case 'note':
+		break;
+		case 'tab':
+		  ctx.beginPath();
+		  ctx.rect(-width, -height-hh, height+hh, hh);
+		  ctx.closePath();
+		  ctx.fill();
+		  ctx.stroke();
+		break;
+		case 'Msquare':
+		break;
+	  }
+	  ctx.beginPath();
+	  ctx.rect(-width, -height, width*2, height*2);
+	  ctx.closePath();
+	  ctx.fill();
+	  ctx.stroke();
+	  
+	  switch(shape) {
+		case 'component':
+		  ctx.beginPath();
+		  ctx.rect(-width-hh, -hh-hh/2, height, hh);
+		  ctx.closePath();
+		  ctx.fill();
+		  ctx.stroke();
+		  ctx.beginPath();
+		  ctx.rect(-width-hh, hh-hh/2, height, hh);
+		  ctx.closePath();
+		  ctx.fill();
+		  ctx.stroke();
+		break;
+	  }
+
+	  ctx.restore();
+	};
+
+	var house = function(pos, width, height, inv){
+	  width = width / 2 + height / 3;
+	  height = height / 3 * 2;
+	  var hh = height / 2;
+	  ctx.save();
+	  ctx.translate(pos.x, pos.y);
+	  set_colors();
+	  if (inv) {
+		ctx.rotate(Math.PI);
+	  }
+	  ctx.beginPath();
+	  ctx.moveTo(-width, height); ctx.lineTo(width, height);
+	  ctx.lineTo(width, 0); ctx.lineTo(0, -height-hh);
+	  ctx.lineTo(-width, 0); 
+	  ctx.closePath();
+	  ctx.fill();
+	  ctx.restore();
+	  ctx.stroke();
+	};
+
+	var parallelogram = function(pos, width, height){
+	  width = width / 2 + height / 2;
+	  var hh = height;
+	  height = height / 3 * 2;
+	  ctx.save();
+	  ctx.translate(pos.x, pos.y);
+	  set_colors();
+	  ctx.beginPath();
+	  ctx.moveTo(-width, -height); ctx.lineTo(width, -height);
+	  ctx.lineTo(width+hh, height); ctx.lineTo(-width+hh, height);
+	  ctx.closePath();
+	  ctx.fill();
+	  ctx.restore();
+	  ctx.stroke();
+	};
+
+	var trapezium = function(pos, width, height, inv){
+	  width = width / 2 + height / 2;
+	  var hh = height;
+	  height = height / 3 * 2;
+	  ctx.save();
+	  ctx.translate(pos.x, pos.y);
+	  set_colors();
+	  if (inv) {
+		ctx.rotate(Math.PI);
+	  }
+	  ctx.beginPath();
+	  ctx.moveTo(-width, -height); ctx.lineTo(width, -height);
+	  ctx.lineTo(width+hh, height); ctx.lineTo(-width-hh, height);
+	  ctx.closePath();
+	  ctx.fill();
+	  ctx.restore();
+	  ctx.stroke();
+	};
+
+	var ellipse = function(pos, width, height){
+	  width = width / 2 + height;
+	  ctx.save();
+	  ctx.translate(pos.x, pos.y);
+	  ctx.scale(1, height / width);
+	  set_colors();
+	  ctx.beginPath();
+	  ctx.arc(0, 0, width, 0, Math.PI * 2, true);
+	  ctx.fill();
+	  ctx.restore();
+	  ctx.stroke();
+	};
+
+	var triangle = function(pos, width, height){
+	  var dim = width / 2 + height / 3 * 2;
+	  var c1x = pos.x, 
+		  c1y = pos.y - height, 
+		  c2x = c1x - dim, 
+		  c2y = pos.y + 8, 
+		  c3x = c1x + dim, 
+		  c3y = c2y;
+	  set_colors();
+	  ctx.beginPath();
+	  ctx.moveTo(c1x, c1y);
+	  ctx.lineTo(c2x, c2y);
+	  ctx.lineTo(c3x, c3y);
+	  ctx.closePath();
+	  ctx.fill();
+	  ctx.stroke();
+	};
+
+	var polygon = function(pos, width, height, n, even){
+	  var pix = 2*Math.PI/n;	// angel in circle
+	  var fy = (3*height)/(2*width);		// deformation of circle
+	  var dim = (n+1)*(3*height+2*width)/(4*n); // radius
+	  ctx.save();
+	  ctx.translate(pos.x, pos.y);
+	  ctx.scale(1, fy);
+	  set_colors();
+	  if (even) {
+		ctx.rotate(pix/2 + Math.PI/2); // flat bottom line
+	  } else {
+		ctx.rotate(Math.PI/2);			// standing on corner
+	  }
+	  ctx.beginPath();
+	  ctx.moveTo(dim, 0);
+	  while(n--) {
+		ctx.rotate(pix);
+		ctx.lineTo(dim, 0);
+	  }
+	  ctx.fill();
+	  ctx.restore();
+	  ctx.stroke();
+	};
+
+	var star = function(pos, width, height){
+	  // var dim = width / 2 + height / 3 * 2;
+	  var dim = height * 4 / 3;
+	  var pi5 = Math.PI / 5;
+	  ctx.save();
+	  ctx.translate(pos.x, pos.y);
+	  set_colors();
+	  ctx.beginPath();
+	  ctx.moveTo(dim, 0);
+	  for (var i = 0; i < 9; i++) {
+		ctx.rotate(pi5);
+		if (i % 2 == 0) {
+		  ctx.lineTo((dim / 0.525731) * 0.200811, 0);
+		} else {
+		  ctx.lineTo(dim, 0);
+		}
+	  }
+	  ctx.closePath();
+	  ctx.fill();
+	  ctx.restore();
+	  ctx.stroke();
+	};
+
+	// drag and drop
 	var nearest = null;
 	var dragged = null;
+	var point_clicked = null;
+	var inside_node = false;
+	var lastX=canvas.width/2, lastY=canvas.height/2;
+	var dragStart = null;
+	var canvas_dragged;
+	
+	var mouse_inside_node = function(item, mp) {
+		if (item !== null && item.node !== null && typeof(item.inside) == 'undefined') {
+			var node = item.node;
+			var boxWidth = node.getWidth();
+			var boxHeight = node.getHeight();
+			var pos = toScreen(item.point.p);
+			var p = toScreen(mp);
+			var diffx = Math.abs(pos.x - p.x);
+			var diffy = Math.abs(pos.y - p.y);
+
+			inside_node = (diffx <= boxWidth/2 && diffy <= boxHeight) ? true : false;
+			item.inside = inside_node;
+		}
+	};
+
+	var snap_to_canvas = function() {
+		// move upper left corner and lower right corner inside canvas
+		var diffx = 0;
+		var diffy = 0;
+		var diffx2 = 0;
+		var diffy2 = 0;
+
+		var xform = ctx.getTransform();
+		var xsize = canvas.width * xform.a;
+		var ysize = canvas.height * xform.a;
+		var xoffset = xform.e;
+		var yoffset = xform.f;
+		
+		if (xoffset > 0) 
+			diffx = -xoffset;
+		if (xoffset < 0 && xoffset + xsize < canvas.width)
+			diffx = canvas.width - (xoffset + xsize);
+
+		if (yoffset > 0) 
+			diffy = -yoffset;
+		if (yoffset < 0 && yoffset + ysize < canvas.height)
+			diffy =	 canvas.height - (yoffset + ysize);
+		ctx.translate(diffx, diffy);
+	};
 
 	jQuery(canvas).mousedown(function(e) {
 		var pos = jQuery(this).offset();
-		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
+		var p1 = ctx.transformedPoint(e.pageX - pos.left, e.pageY - pos.top);
+		var p = fromScreen(p1);
 		selected = nearest = dragged = layout.nearest(p);
-
+		point_clicked = p;
 		if (selected.node !== null) {
-			dragged.point.m = 10000.0;
-
+			// DS 13.Oct 2019 : fix or just move selected node depending on pinWeight
+			dragged.point.m = pinWeight;
+		}
+		mouse_inside_node(selected, p);
+		if (selected.inside) {
 			if (nodeSelected) {
 				nodeSelected(selected.node);
 			}
+		} else {
+			lastX = e.offsetX || (e.pageX - pos.left);
+			lastY = e.offsetY || (e.pageY - pos.top);
+			
+			dragStart = ctx.transformedPoint(lastX,lastY);
+			canvas_dragged = false;
 		}
 
 		renderer.start();
@@ -101,7 +378,7 @@ jQuery.fn.springy = function(params) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
 		selected = layout.nearest(p);
-		node = selected.node;
+		var node = selected.node;
 		if (node && node.data && node.data.ondoubleclick) {
 			node.data.ondoubleclick();
 		}
@@ -109,39 +386,181 @@ jQuery.fn.springy = function(params) {
 
 	jQuery(canvas).mousemove(function(e) {
 		var pos = jQuery(this).offset();
-		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
+		var p1 = ctx.transformedPoint(e.pageX - pos.left, e.pageY - pos.top);
+		var p = fromScreen(p1);
 		nearest = layout.nearest(p);
-
-		if (dragged !== null && dragged.node !== null) {
+		mouse_inside_node(nearest, p);
+		if (dragged !== null && dragged.node !== null && dragged.inside) {
 			dragged.point.p.x = p.x;
 			dragged.point.p.y = p.y;
+		} else {
+			lastX = e.offsetX || (e.pageX - pos.left);
+			lastY = e.offsetY || (e.pageY - pos.top);
+			canvas_dragged = true;
+			if (dragStart !== null){
+				var pt = ctx.transformedPoint(lastX,lastY);
+				var diffx = pt.x-dragStart.x;
+				var diffy = pt.y-dragStart.y;
+				var xform = ctx.getTransform();
+				var xsize = canvas.width * xform.a;
+				var ysize = canvas.height * xform.a;
+				var xoffset = xform.e;
+				var yoffset = xform.f;
+				// 0 limit left:
+				if (diffx > 0 && xoffset + diffx > 0) {
+					diffx = 0;
+				}
+				// 0 limit right:
+				if (diffx < 0 && (xoffset + diffx + xsize) < canvas.width) {
+					diffx = 0;
+				}
+				// 0 limit top:
+				if (diffy > 0 && yoffset+diffy > 0) {
+					diffy = 0;
+				}
+				// 0 limit bottom:
+				if (diffy < 0 && (yoffset + diffy + ysize) < canvas.height) {
+					diffy = 0;
+				}
+				ctx.translate(diffx, diffy);
+				snap_to_canvas();
+			}
 		}
+		renderer.start();
+	});
 
+	jQuery(canvas).mouseleave(function(e) {
+		nearest = null;
+		dragged = null;
+		dragStart = null;
 		renderer.start();
 	});
 
 	jQuery(window).bind('mouseup',function(e) {
 		dragged = null;
+		dragStart = null;
 	});
+	// -------------------------------------------------
+	
+	var zoom = function(clicks){
+		if (! inside_node) {
+			var factor = Math.pow(layout.scaleFactor,clicks);
+			var pt = ctx.transformedPoint(lastX,lastY);
+			var zoomFactor = layout.zoomFactor;
+			ctx.translate(pt.x,pt.y);
+			if (factor < 1) {
+				// avoid negative zoom
+				if (zoomFactor * factor < 1) factor = 1.0/zoomFactor;
+				ctx.scale(factor,factor);
+				zoomFactor = zoomFactor * factor;
+			}
+			if (factor > 1 && zoomFactor < 8) {
+				ctx.scale(factor,factor);
+				zoomFactor = zoomFactor * factor;
+			}
+			ctx.translate(-pt.x,-pt.y);
+			if (clicks < 0)
+				snap_to_canvas();
+			layout.zoomFactor = zoomFactor;
+		} else {
+			var factor = Math.pow(layout.scaleFactor,clicks);
+			var fontsize = layout.fontsize * factor;
+			if (fontsize < 1) fontsize = 1;
+			if (fontsize > 30) fontsize = 30;
+			layout.fontsize = fontsize;
+		} 
+		renderer.start();
+	}
+
+	var handleScroll = function(evt){
+		var delta = evt.wheelDelta ? evt.wheelDelta/40 : evt.detail ? -evt.detail : 0;
+		if (delta) zoom(delta);
+		return evt.preventDefault() && false;
+	};
+	
+	canvas.addEventListener('DOMMouseScroll',handleScroll,false);
+	canvas.addEventListener('mousewheel',handleScroll,false);
+	// -------------------------------------------------
+
+	// Adds ctx.getTransform() - returns an SVGMatrix
+	// Adds ctx.transformedPoint(x,y) - returns an SVGPoint
+	function trackTransforms(ctx){
+		var svg = document.createElementNS("http://www.w3.org/2000/svg",'svg');
+		var xform = svg.createSVGMatrix();
+		ctx.getTransform = function(){ return xform; };
+		
+		var savedTransforms = [];
+		var save = ctx.save;
+		ctx.save = function(){
+			savedTransforms.push(xform.translate(0,0));
+			return save.call(ctx);
+		};
+		var restore = ctx.restore;
+		ctx.restore = function(){
+			xform = savedTransforms.pop();
+			return restore.call(ctx);
+		};
+
+		var scale = ctx.scale;
+		ctx.scale = function(sx,sy){
+			xform = xform.scaleNonUniform(sx,sy);
+			return scale.call(ctx,sx,sy);
+		};
+		var rotate = ctx.rotate;
+		ctx.rotate = function(radians){
+			xform = xform.rotate(radians*180/Math.PI);
+			return rotate.call(ctx,radians);
+		};
+		var translate = ctx.translate;
+		ctx.translate = function(dx,dy){
+			xform = xform.translate(dx,dy);
+			return translate.call(ctx,dx,dy);
+		};
+		var transform = ctx.transform;
+		ctx.transform = function(a,b,c,d,e,f){
+			var m2 = svg.createSVGMatrix();
+			m2.a=a; m2.b=b; m2.c=c; m2.d=d; m2.e=e; m2.f=f;
+			xform = xform.multiply(m2);
+			return transform.call(ctx,a,b,c,d,e,f);
+		};
+		var setTransform = ctx.setTransform;
+		ctx.setTransform = function(a,b,c,d,e,f){
+			xform.a = a;
+			xform.b = b;
+			xform.c = c;
+			xform.d = d;
+			xform.e = e;
+			xform.f = f;
+			return setTransform.call(ctx,a,b,c,d,e,f);
+		};
+		var pt	= svg.createSVGPoint();
+		ctx.transformedPoint = function(x,y){
+			pt.x=x; pt.y=y;
+			return pt.matrixTransform(xform.inverse());
+		}
+	}
+
 
 	var getTextWidth = function(node) {
 		var text = (node.data.label !== undefined) ? node.data.label : node.id;
-		if (node._width && node._width[text])
+		var fontsize = layout.fontsize;
+		if (node._width && node.fontsize === fontsize && node._width[text])
 			return node._width[text];
 
 		ctx.save();
-		ctx.font = (node.data.font !== undefined) ? node.data.font : nodeFont;
+		ctx.font = fontsize.toString() + 'px ' + nodeFont;
 		var width = ctx.measureText(text).width;
 		ctx.restore();
 
 		node._width || (node._width = {});
 		node._width[text] = width;
+		node.fontsize = fontsize;
 
 		return width;
 	};
 
 	var getTextHeight = function(node) {
-		return 16;
+		return layout.fontsize;
 		// In a more modular world, this would actually read the font size, but I think leaving it a constant is sufficient for now.
 		// If you change the font size, I'd adjust this too.
 	};
@@ -212,14 +631,11 @@ jQuery.fn.springy = function(params) {
 			// Figure out how far off center the line should be drawn
 			var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
 
-			var paddingX = 6;
-			var paddingY = 6;
-
 			var s1 = toScreen(p1).add(offset);
 			var s2 = toScreen(p2).add(offset);
 
-			var boxWidth = edge.target.getWidth() + paddingX;
-			var boxHeight = edge.target.getHeight() + paddingY;
+			var boxWidth = edge.target.getWidth() * 1.2;
+			var boxHeight = edge.target.getHeight() * 2.0; // extra space for target polygons
 
 			var intersection = intersect_line_box(s1, s2, {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
 
@@ -227,16 +643,34 @@ jQuery.fn.springy = function(params) {
 				intersection = s2;
 			}
 
-			var stroke = (edge.data.color !== undefined) ? edge.data.color : '#000000';
+			boxWidth = edge.source.getWidth() * 1.2;
+			boxHeight = edge.source.getHeight() * 2.0; // extra space for source polygons
+			
+			// DS: respect source node!
+			var lineStart = intersect_line_box(s1, s2, {x: x1-boxWidth/2.0, y: y1-boxHeight/2.0}, boxWidth, boxHeight);
+			
+			if (!lineStart) {
+				lineStart = s1;
+			}
 
+			var stroke = (edge.data.color !== undefined) ? edge.data.color : '#000000';
+			var fontsize = layout.fontsize;
 			var arrowWidth;
 			var arrowLength;
 
 			var weight = (edge.data.weight !== undefined) ? edge.data.weight : 1.0;
-
-			ctx.lineWidth = Math.max(weight *  2, 0.1);
+			weight = weight * (fontsize/8);
+			if (selected !== null && selected.node !== null 
+			&& (selected.node.id === edge.source.id || selected.node.id === edge.target.id)
+			&& selected.inside) {
+				// highlight edges of the selected node
+				weight = weight * 2;
+				stroke = "rgba(255, 140, 0,0.7)"; 
+			}
+			ctx.save(); // DS: add save
+			ctx.lineWidth = Math.max(weight, 0.1);
 			arrowWidth = 1 + ctx.lineWidth;
-			arrowLength = 8;
+			arrowLength = fontsize*1.8;
 
 			var directional = (edge.data.directional !== undefined) ? edge.data.directional : true;
 
@@ -245,15 +679,15 @@ jQuery.fn.springy = function(params) {
 			if (directional) {
 				lineEnd = intersection.subtract(direction.normalise().multiply(arrowLength * 0.5));
 			} else {
-				lineEnd = s2;
+				lineEnd = intersection; // DS: respect target node!
 			}
 
 			ctx.strokeStyle = stroke;
 			ctx.beginPath();
-			ctx.moveTo(s1.x, s1.y);
+			ctx.moveTo(lineStart.x, lineStart.y); // DS: respect source node!
 			ctx.lineTo(lineEnd.x, lineEnd.y);
 			ctx.stroke();
-
+			ctx.restore(); // DS: add restore
 			// arrow
 			if (directional) {
 				ctx.save();
@@ -271,62 +705,159 @@ jQuery.fn.springy = function(params) {
 			}
 
 			// label
-			if (edge.data.label !== undefined) {
-				text = edge.data.label
+			if (edge.data.label !== undefined && edge.data.label.length) {
+				var text = edge.data.label;
+				var l_fontsize = fontsize * 9 / 10;
 				ctx.save();
 				ctx.textAlign = "center";
 				ctx.textBaseline = "top";
-				ctx.font = (edge.data.font !== undefined) ? edge.data.font : edgeFont;
+				ctx.font = l_fontsize.toString() + 'px ' + edgeFont;
+				if (edgeLabelBoxes) {
+					var boxWidth = ctx.measureText(text).width * 1.1;
+					var px = (x1+x2)/2;
+					var py = (y1+y2)/2 - fontsize/2;
+					ctx.fillStyle = "#EEEEEE"; // label background
+					ctx.fillRect(px-boxWidth/2, py, boxWidth, fontsize);
+
+					ctx.fillStyle = "darkred";
+					ctx.fillText(text, px, py);
+				} else {
 				ctx.fillStyle = stroke;
 				var angle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
-				var displacement = -8;
-				if (edgeLabelsUpright && (angle > Math.PI/2 || angle < -Math.PI/2)) {
-					displacement = 8;
-					angle += Math.PI;
+					var displacement = -(fontsize*2/3);
+					if (edgeLabelsUpright && (angle > Math.PI/2 || angle < -Math.PI/2)) {
+						displacement = fontsize*2/3;
+						angle += Math.PI;
+					}
+					var textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
+					ctx.translate(textPos.x, textPos.y);
+					ctx.rotate(angle);
+					ctx.fillText(text, 0,-2);
 				}
-				var textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
-				ctx.translate(textPos.x, textPos.y);
-				ctx.rotate(angle);
-				ctx.fillText(text, 0,-2);
 				ctx.restore();
 			}
 
 		},
 		function drawNode(node, p) {
 			var s = toScreen(p);
-
-			ctx.save();
-
-			// Pulled out the padding aspect sso that the size functions could be used in multiple places
-			// These should probably be settable by the user (and scoped higher) but this suffices for now
-			var paddingX = 6;
-			var paddingY = 6;
-
-			var contentWidth = node.getWidth();
-			var contentHeight = node.getHeight();
-			var boxWidth = contentWidth + paddingX;
-			var boxHeight = contentHeight + paddingY;
-
-			// clear background
-			ctx.clearRect(s.x - boxWidth/2, s.y - boxHeight/2, boxWidth, boxHeight);
-
+			var boxWidth = node.getWidth();
+			var boxHeight = node.getHeight() * 1.2;
+			var alpha = '0.9';
+			var color = typeof(node.data.color) !== 'undefined' ? node.data.color : ''; 
+			var textColor = 'Black';
 			// fill background
-			if (selected !== null && selected.node !== null && selected.node.id === node.id) {
-				ctx.fillStyle = "#FFFFE0";
-			} else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id) {
-				ctx.fillStyle = "#EEEEEE";
+			if (selected !== null && selected.node !== null && selected.node.id === node.id && selected.inside) {
+				shadowColor = 'DarkOrange';
+				shadowOffset = 0;
 			} else {
-				ctx.fillStyle = "#FFFFFF";
+				shadowColor = "rgba(50, 50, 50, 0.3)";
+				shadowOffset = 10;
 			}
-			ctx.fillRect(s.x - boxWidth/2, s.y - boxHeight/2, boxWidth, boxHeight);
-
+			if (color.length > 0) {
+				color1 = color;
+				color2 = color;
+			} else {
+				color1 = "rgba(176, 224, 230,"+alpha+")"; // PowderBlue - rgb(176, 224, 230)
+				color2 = "rgba(176, 196, 222,"+alpha+")"; // LightSteelBlue - rgb(176, 196, 222)
+			}
 			if (node.data.image == undefined) {
-				ctx.textAlign = "left";
-				ctx.textBaseline = "top";
-				ctx.font = (node.data.font !== undefined) ? node.data.font : nodeFont;
-				ctx.fillStyle = (node.data.color !== undefined) ? node.data.color : "#000000";
-				var text = (node.data.label !== undefined) ? node.data.label : node.id;
-				ctx.fillText(text, s.x - contentWidth/2, s.y - contentHeight/2);
+				ctx.save();
+				ctx.lineWidth = layout.fontsize/12;
+				ctx.strokeStyle = "SlateGray";
+
+				/********* Draw Shape **********/
+				/*******************************/
+				var shape = typeof(node.data.shape) !== 'undefined' ? node.data.shape : 'box';
+				switch(shape) {
+				case 'plaintext':
+				case 'none':
+				break;
+				case 'box':
+					box_shape(s, boxWidth, boxHeight, shape);
+				break;
+				case 'doublebox':
+					box_shape(s, boxWidth*1.1, boxHeight*1.2, shape);
+					box_shape(s, boxWidth, boxHeight, shape);
+				break;
+				case 'house':
+					house(s, boxWidth, boxHeight, false);
+				break;
+				case 'invhouse':
+					house(s, boxWidth, boxHeight, true);
+				break;
+				case 'circle':
+					ellipse(s, boxWidth, boxWidth);
+				break;
+				case 'ellipse':
+					ellipse(s, boxWidth, boxHeight);
+				break;
+				case 'doublecircle':
+					ellipse(s, boxWidth*1.1, boxHeight*1.2);
+					ellipse(s, boxWidth, boxHeight);
+				break;
+				case 'point':
+					textColor = 'DarkGray';
+					ellipse(s, boxHeight, boxHeight);
+				break;
+				case 'triangle':
+					triangle(s, boxWidth, boxHeight);
+					// polygon(s, boxWidth, boxHeight, 3, true);
+				break;
+				case 'invtriangle':
+					polygon(s, boxWidth, boxHeight, 3, false);
+				break;
+				case 'rectangle':
+					polygon(s, boxWidth, boxHeight, 4, true);
+				break;
+				case 'diamond':
+					polygon(s, boxWidth, boxHeight, 4, false);
+				break;
+				case 'pentagon':
+					polygon(s, boxWidth, boxHeight, 5, true);
+				break;
+				case 'hexagon':
+					polygon(s, boxWidth, boxHeight, 6, true);
+				break;
+				case 'septagon':
+					polygon(s, boxWidth, boxHeight, 7, true);
+				break;
+				case 'octagon':
+					polygon(s, boxWidth, boxHeight, 8, true);
+				break;
+				case 'doubleoctagon':
+					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true);
+					polygon(s, boxWidth, boxHeight, 8, true);
+				break;
+				case 'tripleoctagon':
+					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true);
+					polygon(s, boxWidth, boxHeight, 8, true);
+					polygon(s, boxWidth*0.9, boxHeight*0.8, 8, true);
+				break;
+				case 'star':
+					textColor = 'DarkGray';
+					star(s, boxWidth, boxHeight);
+				break;
+				case 'trapezium':
+					trapezium(s, boxWidth, boxHeight, false);
+				break;
+				case 'invtrapezium':
+					trapezium(s, boxWidth, boxHeight, true);
+				break;
+				case 'parallelogram':
+					parallelogram(s, boxWidth, boxHeight);
+				break;
+				default:
+					box(s, boxWidth, boxHeight);
+				}
+				ctx.translate(s.x, s.y);
+				// Node Label Text
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.font = node.fontsize.toString() + 'px ' + nodeFont;
+				ctx.fillStyle = textColor;
+				var text = typeof(node.data.label) !== 'undefined' ? node.data.label : node.id;
+				ctx.fillText(text, 0, 0);
+				ctx.restore();
 			} else {
 				// Currently we just ignore any labels if the image object is set. One might want to extend this logic to allow for both, or other composite nodes.
 				var src = node.data.image.src;  // There should probably be a sanity check here too, but un-src-ed images aren't exaclty a disaster.
@@ -348,7 +879,15 @@ jQuery.fn.springy = function(params) {
 					img.src = src;
 				}
 			}
-			ctx.restore();
+		},
+		function getCanvasPos() {
+			var xform = ctx.getTransform();
+			var canvasPos = {};
+			canvasPos.fontsize = layout.fontsize;
+			canvasPos.zoomFactor = layout.zoomFactor;
+			canvasPos.x_offset = xform.e / layout.zoomFactor;
+			canvasPos.y_offset = xform.f / layout.zoomFactor;
+			return canvasPos;
 		}
 	);
 
