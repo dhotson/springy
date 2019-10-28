@@ -190,7 +190,7 @@ jQuery.fn.springy = function(params) {
 	  var hh = height;
 	  height = height / 3 * 2;
 	  ctx.save();
-	  ctx.translate(pos.x, pos.y);
+	  ctx.translate(pos.x-(hh/2), pos.y);
 	  set_colors();
 	  ctx.beginPath();
 	  ctx.moveTo(-width, -height); ctx.lineTo(width, -height);
@@ -221,10 +221,14 @@ jQuery.fn.springy = function(params) {
 	};
 
 	var ellipse = function(pos, width, height){
-	  width = width / 2 + height;
 	  ctx.save();
 	  ctx.translate(pos.x, pos.y);
-	  ctx.scale(1, height / width);
+	  if (width > height) {
+	  	width = width / 2 + height;
+	  	ctx.scale(1, height / width);
+	  } else {
+	    width = width / 2;
+	  }
 	  set_colors();
 	  ctx.beginPath();
 	  ctx.arc(0, 0, width, 0, Math.PI * 2, true);
@@ -742,7 +746,7 @@ jQuery.fn.springy = function(params) {
 			var s = toScreen(p);
 			var boxWidth = node.getWidth();
 			var boxHeight = node.getHeight() * 1.2;
-			var alpha = '0.9';
+			var alpha = '0.8';
 			var color = typeof(node.data.color) !== 'undefined' ? node.data.color : ''; 
 			var textColor = 'Black';
 			// fill background
@@ -786,7 +790,7 @@ jQuery.fn.springy = function(params) {
 					house(s, boxWidth, boxHeight, true);
 				break;
 				case 'circle':
-					ellipse(s, boxWidth, boxWidth);
+					ellipse(s, boxWidth+boxHeight, boxWidth+boxHeight);
 				break;
 				case 'ellipse':
 					ellipse(s, boxWidth, boxHeight);
@@ -844,7 +848,7 @@ jQuery.fn.springy = function(params) {
 					trapezium(s, boxWidth, boxHeight, true);
 				break;
 				case 'parallelogram':
-					parallelogram(s, boxWidth, boxHeight);
+					parallelogram(s, boxWidth, boxHeight*1.1);
 				break;
 				default:
 					box(s, boxWidth, boxHeight);
