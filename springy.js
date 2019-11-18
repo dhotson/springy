@@ -599,7 +599,7 @@
 			}
 		});
 
-		var padding = topright.subtract(bottomleft).multiply(0.07); // ~5% padding
+		var padding = topright.subtract(bottomleft).multiply2(0.14, 0.07); // ~5% padding 
 
 		return {bottomleft: bottomleft.subtract(padding), topright: topright.add(padding)};
 	};
@@ -625,6 +625,10 @@
 
 	Vector.prototype.multiply = function(n) {
 		return new Vector(this.x * n, this.y * n);
+	};
+
+	Vector.prototype.multiply2 = function(n, m) {
+		return new Vector(this.x * n, this.y * m);
 	};
 
 	Vector.prototype.divide = function(n) {
