@@ -338,6 +338,7 @@
 		this.fontsize = fontsize || 8.0;
 		this.scaleFactor = 1.025;	// scale factor for each wheel click.
 		this.zoomFactor = zoomFactor || 1.0;	// current zoom factor for the whole canvas.
+		this.energy = 0;
 		this.nodePoints = {}; // keep track of points associated with nodes
 		this.edgeSprings = {}; // keep track of springs associated with edges
 	};
@@ -390,6 +391,22 @@
 		return this.edgeSprings[edge.id];
 	};
 
+	// produce a random sample: callback should accept two arguments: Node, Point
+	Layout.ForceDirected.prototype.sampleNode = function(callback, limit) {
+		var t = this;
+    	var sample = [];
+		var length = this.graph.nodes.length;
+		var n = Math.max(Math.min(limit, length), 0);
+		while (n--) {
+		  var rand =  Math.floor(Math.random() * length);
+      	  sample[rand] = t.graph.nodes[rand]; // deduplicate
+		  //callback.call(t, rand, t.point(t.graph.nodes[rand]));
+		}
+		sample.forEach(function(n){
+			callback.call(t, n, t.point(n));
+		});
+	};
+
 	// callback should accept two arguments: Node, Point
 	Layout.ForceDirected.prototype.eachNode = function(callback) {
 		var t = this;
@@ -414,7 +431,28 @@
 		});
 	};
 
+	Layout.ForceDirected.prototype.scaleFontSize = function(factor) {
+		var t = this;
+		t.fontsize *= factor;
+	};
 
+
+	var timeslice = 1000000;
+	var loops_cnt = timeslice;
+	var sliceTimer = null;
+	function tic_fork (cnt, stage) {
+		loops_cnt -= cnt;
+		if (loops_cnt <= 0) {		// DS: with 1,000 nodes we have 1,000,000 iterations, thats why i slice the time.
+			loops_cnt = timeslice;
+			console.log('tic'+stage);
+			if (! sliceTimer) {
+				sliceTimer = window.setTimeout(function (){
+					console.log('tic-slice'+stage);
+					sliceTimer = null;
+				}, 10);
+			}
+		}
+	}
 	// Physics stuff
 	Layout.ForceDirected.prototype.applyCoulombsLaw = function() {
 		this.eachNode(function(n1, point1) {
@@ -430,6 +468,7 @@
 					point2.applyForce(direction.multiply(this.repulsion).divide(distance * distance * -0.5));
 				}
 			});
+			tic_fork (this.graph.nodes.length, 1);
 		});
 	};
 
@@ -509,7 +548,7 @@
 	 * Start simulation if it's not running already.
 	 * In case it's running then the call is ignored, and none of the callbacks passed is ever executed.
 	 */
-	Layout.ForceDirected.prototype.start = function(render, onRenderStop, onRenderStart) {
+	Layout.ForceDirected.prototype.start = function(render, onRenderStop, onRenderStart, do_update) {
 		var t = this;
 
 		if (this._started) return;
@@ -517,16 +556,17 @@
 		this._stop = false;
 
 		if (onRenderStart !== undefined) { onRenderStart(); }
-
 		Springy.requestAnimationFrame(function step() {
-			t.tick(0.03);
-
+			if (do_update) {
+				t.tick(0.03);
+			}
 			if (render !== undefined) {
 				render();
 			}
-
+			// console.log('toc');
 			// stop simulation when energy of the system goes below a threshold
-			if (t._stop || t.totalEnergy() < t.minEnergyThreshold) {
+			t.energy = t.totalEnergy();
+			if (t._stop || t.energy < t.minEnergyThreshold) {
 				t._started = false;
 				if (onRenderStop !== undefined) { onRenderStop(); }
 			} else {
@@ -542,9 +582,11 @@
 	Layout.ForceDirected.prototype.tick = function(timestep) {
 		this.applyCoulombsLaw();
 		this.applyHookesLaw();
+		tic_fork (this.graph.edges.length, 2);
 		this.attractToCentre();
 		this.updateVelocity(timestep);
 		this.updatePosition(timestep);
+		tic_fork (this.graph.nodes.length * 3, 3);
 	};
 
 	// Find the nearest point to a particular position
@@ -707,6 +749,11 @@
 		return this.getCanvasPos();
 	};
 
+	Renderer.prototype.scaleFontSize = function(factor) {
+		this.layout.scaleFontSize(factor);
+		this.start();
+	};
+
 	/**
 	 * Starts the simulation of the layout in use.
 	 *
@@ -717,7 +764,7 @@
 	 * @param done An optional callback function that gets executed when the springy algorithm stops,
 	 * either because it ended or because stop() was called.
 	 */
-	Renderer.prototype.start = function(done) {
+	Renderer.prototype.start = function(do_update) {
 		var t = this;
 		this.layout.start(function render() {
 			t.clear();
@@ -725,13 +772,15 @@
 			t.layout.eachEdge(function(edge, spring) {
 				t.drawEdge(edge, spring.point1.p, spring.point2.p);
 			});
+			tic_fork (t.layout.graph.edges.length*100, 4);
 
 			t.layout.eachNode(function(node, point) {
 				t.drawNode(node, point.p);
 			});
+			tic_fork (t.layout.graph.nodes.length*100, 5);
 			
 			if (t.onRenderFrame !== undefined) { t.onRenderFrame(); }
-		}, this.onRenderStop, this.onRenderStart);
+		}, this.onRenderStop, this.onRenderStart, do_update);
 	};
 
 	Renderer.prototype.stop = function() {

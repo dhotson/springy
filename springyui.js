@@ -37,10 +37,14 @@ jQuery.fn.springy = function(params) {
 	var maxSpeed = params.maxSpeed || Infinity; // nodes aren't allowed to exceed this speed
 	var nodeSelected = params.nodeSelected || null;
 	var nodePositions = params.nodePositions || null;
+	var RenderFrameCall = params.onRenderFrame || null;
+	var RenderStopCall = params.onRenderStop || null;
+	var RenderStartCall = params.onRenderStart || null;
 	var pinWeight = params.pinWeight || 1000.0;
 	var nodeImages = {};
 	var edgeLabelsUpright = true;
 	var edgeLabelBoxes = params.edgeLabelBoxes || false;
+	var useGradient = params.useGradient || false;
 	var fontsize = params.fontsize * 1.0 || Math.max(12 - Math.round(Math.sqrt(graph.nodes.length)), 4);
 	var zoomFactor = params.zoomFactor * 1.0 || 1.0;
 	var canvas = this[0];
@@ -52,7 +56,7 @@ jQuery.fn.springy = function(params) {
 	var color1 = "#7FEFFF"; // blue
 	var color2 = "#50C0FF"; 
 	var shadowColor = "rgba(50, 50, 50, 0.3)";
-	var shadowOffset = 10;
+	var shadowOffset = fontsize * zoomFactor;
 	trackTransforms(ctx);
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
@@ -95,24 +99,36 @@ jQuery.fn.springy = function(params) {
 		return new Springy.Vector(px, py);
 	};
 
-	var set_colors = function() {
+	var set_2colors = function() {
 	  var grd = ctx.createLinearGradient(-100, 100, 100, -100);
 	  grd.addColorStop(0, color1);
 	  grd.addColorStop(1, color2); 
 	  ctx.fillStyle = grd;
 	  ctx.shadowColor = shadowColor;
-	  ctx.shadowBlur = 10;
+	  ctx.shadowBlur = layout.fontsize*layout.zoomFactor;
 	  ctx.shadowOffsetX = shadowOffset; 
 	  ctx.shadowOffsetY = shadowOffset;
 	};
+	var set_1colors = function() {
+	  ctx.fillStyle = color1;
+	  ctx.shadowColor = shadowColor;
+	  ctx.shadowBlur = layout.fontsize*layout.zoomFactor;
+	  ctx.shadowOffsetX = shadowOffset; 
+	  ctx.shadowOffsetY = shadowOffset;
+	};
+	var set_colors = (useGradient)? set_2colors : set_1colors;
 	
-	var box_shape = function(pos, width, height, shape){
+	var box_shape = function(pos, width, height, shape, first){
 	  height = (height*8/14);
 	  width = width / 2.0 + height / 2.0;
 	  var hh = height / 2.0;
 	  ctx.save();
 	  ctx.translate(pos.x, pos.y);
-	  set_colors();
+	  if (first) {
+	    set_colors();
+	  } else { 
+	    ctx.fillStyle = color1;
+	  }
 	  switch(shape) {
 		case 'box3d':
 		  ctx.beginPath();
@@ -220,7 +236,7 @@ jQuery.fn.springy = function(params) {
 	  ctx.stroke();
 	};
 
-	var ellipse = function(pos, width, height){
+	var ellipse = function(pos, width, height, first){
 	  ctx.save();
 	  ctx.translate(pos.x, pos.y);
 	  if (width > height) {
@@ -229,7 +245,11 @@ jQuery.fn.springy = function(params) {
 	  } else {
 	    width = width / 2;
 	  }
-	  set_colors();
+	  if (first) {
+	    set_colors();
+	  } else {
+	  	ctx.fillStyle = color1;
+	  }
 	  ctx.beginPath();
 	  ctx.arc(0, 0, width, 0, Math.PI * 2, true);
 	  ctx.fill();
@@ -255,16 +275,20 @@ jQuery.fn.springy = function(params) {
 	  ctx.stroke();
 	};
 
-	var polygon = function(pos, width, height, n, even){
+	var polygon = function(pos, width, height, n, even, first){
 	  var pix = 2*Math.PI/n;	// angel in circle
 	  var fy = (3*height)/(2*width);		// deformation of circle
 	  var dim = (n+1)*(3*height+2*width)/(4*n); // radius
 	  ctx.save();
 	  ctx.translate(pos.x, pos.y);
 	  ctx.scale(1, fy);
-	  set_colors();
+	  if (first) {
+	      set_colors();
+	  } else {
+	      ctx.fillStyle = color1;
+	  }
 	  if (even) {
-		ctx.rotate(pix/2 + Math.PI/2); // flat bottom line
+		ctx.rotate(pix/2 + Math.PI/2*even); // flat bottom line
 	  } else {
 		ctx.rotate(Math.PI/2);			// standing on corner
 	  }
@@ -374,7 +398,7 @@ jQuery.fn.springy = function(params) {
 			canvas_dragged = false;
 		}
 
-		renderer.start();
+		renderer.start(selected.inside);
 	});
 
 	// Basic double click handler
@@ -430,14 +454,14 @@ jQuery.fn.springy = function(params) {
 				snap_to_canvas();
 			}
 		}
-		renderer.start();
+		renderer.start(dragged !== null && dragged.inside);
 	});
 
 	jQuery(canvas).mouseleave(function(e) {
 		nearest = null;
 		dragged = null;
 		dragStart = null;
-		renderer.start();
+		renderer.start(true);
 	});
 
 	jQuery(window).bind('mouseup',function(e) {
@@ -473,7 +497,7 @@ jQuery.fn.springy = function(params) {
 			if (fontsize > 30) fontsize = 30;
 			layout.fontsize = fontsize;
 		} 
-		renderer.start();
+		renderer.start(true);
 	}
 
 	var handleScroll = function(evt){
@@ -712,33 +736,36 @@ jQuery.fn.springy = function(params) {
 			if (edge.data.label !== undefined && edge.data.label.length) {
 				var text = edge.data.label;
 				var l_fontsize = fontsize * 9 / 10;
-				ctx.save();
-				ctx.textAlign = "center";
-				ctx.textBaseline = "top";
-				ctx.font = l_fontsize.toString() + 'px ' + edgeFont;
-				if (edgeLabelBoxes) {
-					var boxWidth = ctx.measureText(text).width * 1.1;
-					var px = (x1+x2)/2;
-					var py = (y1+y2)/2 - fontsize/2;
-					ctx.fillStyle = "#EEEEEE"; // label background
-					ctx.fillRect(px-boxWidth/2, py, boxWidth, fontsize);
+				if (l_fontsize * layout.zoomFactor > 2.4) { // DS: hide tiny label
+					ctx.save();
+					ctx.textAlign = "center";
+					ctx.font = l_fontsize.toString() + 'px ' + edgeFont;
+					if (edgeLabelBoxes) {
+						var boxWidth = ctx.measureText(text).width * 1.1;
+						var px = (x1+x2)/2;
+						var py = (y1+y2)/2 - fontsize/2;
+						ctx.textBaseline = "top";
+						ctx.fillStyle = "#EEEEEE"; // label background
+						ctx.fillRect(px-boxWidth/2, py, boxWidth, fontsize);
 
-					ctx.fillStyle = "darkred";
-					ctx.fillText(text, px, py);
-				} else {
-				ctx.fillStyle = stroke;
-				var angle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
-					var displacement = -(fontsize*2/3);
-					if (edgeLabelsUpright && (angle > Math.PI/2 || angle < -Math.PI/2)) {
-						displacement = fontsize*2/3;
-						angle += Math.PI;
+						ctx.fillStyle = "darkred";
+						ctx.fillText(text, px, py);
+					} else {
+						ctx.textBaseline = "middle";
+						ctx.fillStyle = stroke;
+						var angle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
+						var displacement = -(l_fontsize / 3.0);
+						if (edgeLabelsUpright && (angle > Math.PI/2 || angle < -Math.PI/2)) {
+							displacement = l_fontsize / 3.0;
+							angle += Math.PI;
+						}
+						var textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
+						ctx.translate(textPos.x, textPos.y);
+						ctx.rotate(angle);
+						ctx.fillText(text, 0,-2);
 					}
-					var textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
-					ctx.translate(textPos.x, textPos.y);
-					ctx.rotate(angle);
-					ctx.fillText(text, 0,-2);
+					ctx.restore();
 				}
-				ctx.restore();
 			}
 
 		},
@@ -755,7 +782,7 @@ jQuery.fn.springy = function(params) {
 				shadowOffset = 0;
 			} else {
 				shadowColor = "rgba(50, 50, 50, 0.3)";
-				shadowOffset = 10;
+				shadowOffset = layout.fontsize * layout.zoomFactor;
 			}
 			if (color.length > 0) {
 				color1 = color;
@@ -777,11 +804,17 @@ jQuery.fn.springy = function(params) {
 				case 'none':
 				break;
 				case 'box':
-					box_shape(s, boxWidth, boxHeight, shape);
+				case 'box3d':
+				case 'folder':
+				case 'note':
+				case 'tab':
+				case 'component':
+				case 'Msquare':
+					box_shape(s, boxWidth, boxHeight, shape, true);
 				break;
 				case 'doublebox':
-					box_shape(s, boxWidth*1.1, boxHeight*1.2, shape);
-					box_shape(s, boxWidth, boxHeight, shape);
+					box_shape(s, boxWidth*1.1, boxHeight*1.2, shape, true);
+					box_shape(s, boxWidth, boxHeight, shape, false);
 				break;
 				case 'house':
 					house(s, boxWidth, boxHeight, false);
@@ -790,52 +823,57 @@ jQuery.fn.springy = function(params) {
 					house(s, boxWidth, boxHeight, true);
 				break;
 				case 'circle':
-					ellipse(s, boxWidth+boxHeight, boxWidth+boxHeight);
+					ellipse(s, boxWidth+boxHeight, boxWidth+boxHeight, true);
 				break;
 				case 'ellipse':
-					ellipse(s, boxWidth, boxHeight);
+					ellipse(s, boxWidth, boxHeight, true);
 				break;
 				case 'doublecircle':
-					ellipse(s, boxWidth*1.1, boxHeight*1.2);
-					ellipse(s, boxWidth, boxHeight);
+					ellipse(s, boxWidth*1.1, boxHeight*1.2, true);
+					ellipse(s, boxWidth, boxHeight, false);
 				break;
 				case 'point':
 					textColor = 'DarkGray';
-					ellipse(s, boxHeight, boxHeight);
+					ellipse(s, boxHeight, boxHeight, true);
 				break;
 				case 'triangle':
 					triangle(s, boxWidth, boxHeight);
-					// polygon(s, boxWidth, boxHeight, 3, true);
+				break;
+				case 'righttriangle':
+					polygon(s, boxWidth*1.2, boxHeight, 3, 2, true);
+				break;
+				case 'lefttriangle':
+					polygon(s, boxWidth*1.2, boxHeight, 3, 4, true);
 				break;
 				case 'invtriangle':
-					polygon(s, boxWidth, boxHeight, 3, false);
+					polygon(s, boxWidth, boxHeight, 3, false, true);
 				break;
 				case 'rectangle':
-					polygon(s, boxWidth, boxHeight, 4, true);
+					polygon(s, boxWidth, boxHeight, 4, true, true);
 				break;
 				case 'diamond':
-					polygon(s, boxWidth, boxHeight, 4, false);
+					polygon(s, boxWidth, boxHeight, 4, false, true);
 				break;
 				case 'pentagon':
-					polygon(s, boxWidth, boxHeight, 5, true);
+					polygon(s, boxWidth, boxHeight, 5, true, true);
 				break;
 				case 'hexagon':
-					polygon(s, boxWidth, boxHeight, 6, true);
+					polygon(s, boxWidth, boxHeight, 6, true, true);
 				break;
 				case 'septagon':
-					polygon(s, boxWidth, boxHeight, 7, true);
+					polygon(s, boxWidth, boxHeight, 7, true, true);
 				break;
 				case 'octagon':
-					polygon(s, boxWidth, boxHeight, 8, true);
+					polygon(s, boxWidth, boxHeight, 8, true, true);
 				break;
 				case 'doubleoctagon':
-					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true);
+					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true, true);
 					polygon(s, boxWidth, boxHeight, 8, true);
 				break;
 				case 'tripleoctagon':
-					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true);
-					polygon(s, boxWidth, boxHeight, 8, true);
-					polygon(s, boxWidth*0.9, boxHeight*0.8, 8, true);
+					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true, true);
+					polygon(s, boxWidth, boxHeight, 8, true, false);
+					polygon(s, boxWidth*0.9, boxHeight*0.8, 8, true, false);
 				break;
 				case 'star':
 					textColor = 'DarkGray';
@@ -851,16 +889,18 @@ jQuery.fn.springy = function(params) {
 					parallelogram(s, boxWidth, boxHeight*1.1);
 				break;
 				default:
-					box(s, boxWidth, boxHeight);
+					box_shape(s, boxWidth, boxHeight, shape, true);
 				}
 				ctx.translate(s.x, s.y);
 				// Node Label Text
-				ctx.textAlign = "center";
-				ctx.textBaseline = "middle";
-				ctx.font = node.fontsize.toString() + 'px ' + nodeFont;
-				ctx.fillStyle = textColor;
-				var text = typeof(node.data.label) !== 'undefined' ? node.data.label : node.id;
-				ctx.fillText(text, 0, 0);
+				if (node.fontsize * layout.zoomFactor > 2.4) { // DS: hide tiny label
+					ctx.textAlign = "center";
+					ctx.textBaseline = "middle";
+					ctx.font = node.fontsize.toString() + 'px ' + nodeFont;
+					ctx.fillStyle = textColor;
+					var text = typeof(node.data.label) !== 'undefined' ? node.data.label : node.id;
+					ctx.fillText(text, 0, 0);
+				}
 				ctx.restore();
 			} else {
 				// Currently we just ignore any labels if the image object is set. One might want to extend this logic to allow for both, or other composite nodes.
@@ -888,14 +928,27 @@ jQuery.fn.springy = function(params) {
 			var xform = ctx.getTransform();
 			var canvasPos = {};
 			canvasPos.fontsize = layout.fontsize;
-			canvasPos.zoomFactor = layout.zoomFactor;
+			canvasPos.zoomFactor = layout.zoomFactor; // = xform.e = xform.d
 			canvasPos.x_offset = xform.e / layout.zoomFactor;
 			canvasPos.y_offset = xform.f / layout.zoomFactor;
+			canvasPos.energy = layout.energy;
 			return canvasPos;
+		},
+		function onRenderStop() {
+			if (RenderStopCall) 
+				RenderStopCall(renderer);
+		},
+		function onRenderStart() {
+			if (RenderStartCall) 
+				RenderStartCall(renderer);
+		},
+		function onRenderFrame() {
+			if (RenderFrameCall) 
+				RenderFrameCall(renderer);
 		}
 	);
 
-	renderer.start();
+	renderer.start(true);
 
 	// helpers for figuring out where to draw arrows
 	function intersect_line_line(p1, p2, p3, p4) {
@@ -930,7 +983,6 @@ jQuery.fn.springy = function(params) {
 
 		return false;
 	}
-
 	return this;
 }
 
