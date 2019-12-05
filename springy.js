@@ -328,7 +328,7 @@
 
 	// -----------
 	var Layout = Springy.Layout = {};
-	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, zoomFactor) {
+	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor) {
 		this.graph = graph;
 		this.stiffness = stiffness; // spring stiffness constant
 		this.repulsion = repulsion; // repulsion constant
@@ -336,6 +336,10 @@
 		this.minEnergyThreshold = minEnergyThreshold || 0.01; //threshold used to determine render stop
 		this.maxSpeed = maxSpeed || Infinity; // nodes aren't allowed to exceed this speed
 		this.fontsize = fontsize || 8.0;
+		this.edgeFontsize = this.fontsize * 9 / 10;
+		this.fontname = fontname || "Verdana, sans-serif";
+		this.nodeFont = this.fontsize.toString() + 'px ' + this.fontname;
+		this.edgeFont = this.edgeFontsize.toString() + 'px ' + this.fontname;
 		this.scaleFactor = 1.025;	// scale factor for each wheel click.
 		this.zoomFactor = zoomFactor || 1.0;	// current zoom factor for the whole canvas.
 		this.energy = 0;
@@ -432,24 +436,31 @@
 	};
 
 	Layout.ForceDirected.prototype.scaleFontSize = function(factor) {
-		var t = this;
-		t.fontsize *= factor;
+		const t = this;
+		let fontsize = t.fontsize * factor;
+		if (fontsize < 1) fontsize = 1;
+		if (fontsize > 30) fontsize = 30;
+		t.edgeFontsize = fontsize * 9 / 10;
+		t.fontsize = fontsize;
+		t.nodeFont = t.fontsize.toString() + 'px ' + t.fontname;
+		t.edgeFont = t.edgeFontsize.toString() + 'px ' + t.fontname;
 	};
 
 
-	var timeslice = 1000000;
+	var timeslice = 200000;
 	var loops_cnt = timeslice;
 	var sliceTimer = null;
 	function tic_fork (cnt, stage) {
 		loops_cnt -= cnt;
 		if (loops_cnt <= 0) {		// DS: with 1,000 nodes we have 1,000,000 iterations, thats why i slice the time.
 			loops_cnt = timeslice;
-			console.log('tic'+stage);
+			//window.setTimeout(function () {console.log('tic-'+stage);});
+			// console.log('tic'+stage);
 			if (! sliceTimer) {
 				sliceTimer = window.setTimeout(function (){
-					console.log('tic-slice'+stage);
+					// console.log('tic-slice'+stage);
 					sliceTimer = null;
-				}, 10);
+				}, 1);
 			}
 		}
 	}
@@ -738,7 +749,7 @@
 	}
 
 	Renderer.prototype.graphChanged = function(e) {
-		this.start();
+		this.start(true);
 	};
 
 	Renderer.prototype.getNodePositions = function(e) {
@@ -751,7 +762,7 @@
 
 	Renderer.prototype.scaleFontSize = function(factor) {
 		this.layout.scaleFontSize(factor);
-		this.start();
+		this.start(true);
 	};
 
 	/**

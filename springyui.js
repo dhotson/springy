@@ -27,30 +27,39 @@ Copyright (c) 2010 Dennis Hotson
 (function() {
 
 jQuery.fn.springy = function(params) {
-	var graph = this.graph = params.graph || new Springy.Graph();
-	var nodeFont = "Verdana, sans-serif";
-	var edgeFont = "Verdana, sans-serif";
-	var stiffness = params.stiffness || 400.0;
-	var repulsion = params.repulsion || 400.0;
-	var damping = params.damping || 0.5;
-	var minEnergyThreshold = params.minEnergyThreshold || 0.00001;
-	var maxSpeed = params.maxSpeed || Infinity; // nodes aren't allowed to exceed this speed
-	var nodeSelected = params.nodeSelected || null;
-	var nodePositions = params.nodePositions || null;
-	var RenderFrameCall = params.onRenderFrame || null;
-	var RenderStopCall = params.onRenderStop || null;
-	var RenderStartCall = params.onRenderStart || null;
-	var pinWeight = params.pinWeight || 1000.0;
+	const graph = this.graph = params.graph || new Springy.Graph();
+	const fontname = "Verdana, sans-serif";
+	const nodeTextColor = 'Black';
+	const nodeTextAlign = "center";
+	const nodeTextBaseline = "middle";
+	const activeShadowColor = 'DarkOrange';
+	const activeShadowOffset = 0;
+	const passiveShadowColor = "rgba(50, 50, 50, 0.3)";
+	const nodeAlpha = '0.8';
+	const nodestrokeStyle = "SlateGray";
+	const defaultColor1 	= "rgba(176, 224, 230,"+nodeAlpha+")"; // PowderBlue - rgb(176, 224, 230)
+	const defaultColor2 	= "rgba(176, 196, 222,"+nodeAlpha+")"; // LightSteelBlue - rgb(176, 196, 222)
+	const stiffness = params.stiffness || 400.0;
+	const repulsion = params.repulsion || 400.0;
+	const damping = params.damping || 0.5;
+	const minEnergyThreshold = params.minEnergyThreshold || 0.00001;
+	const maxSpeed = params.maxSpeed || Infinity; // nodes aren't allowed to exceed this speed
+	const nodeSelected = params.nodeSelected || null;
+	const nodePositions = params.nodePositions || null;
+	const RenderFrameCall = params.onRenderFrame || null;
+	const RenderStopCall = params.onRenderStop || null;
+	const RenderStartCall = params.onRenderStart || null;
+	const pinWeight = params.pinWeight || 1000.0;
 	var nodeImages = {};
-	var edgeLabelsUpright = true;
-	var edgeLabelBoxes = params.edgeLabelBoxes || false;
-	var useGradient = params.useGradient || false;
+	const edgeLabelsUpright = true;
+	const edgeLabelBoxes = params.edgeLabelBoxes || false;
+	const useGradient = params.useGradient || false;
 	var fontsize = params.fontsize * 1.0 || Math.max(12 - Math.round(Math.sqrt(graph.nodes.length)), 4);
 	var zoomFactor = params.zoomFactor * 1.0 || 1.0;
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
 
-	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, zoomFactor);
+	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor);
 	var selected = null;
 
 	var color1 = "#7FEFFF"; // blue
@@ -472,9 +481,9 @@ jQuery.fn.springy = function(params) {
 	
 	var zoom = function(clicks){
 		if (! inside_node) {
-			var factor = Math.pow(layout.scaleFactor,clicks);
-			var pt = ctx.transformedPoint(lastX,lastY);
-			var zoomFactor = layout.zoomFactor;
+			let factor = Math.pow(layout.scaleFactor,clicks);
+			let pt = ctx.transformedPoint(lastX,lastY);
+			let zoomFactor = layout.zoomFactor;
 			ctx.translate(pt.x,pt.y);
 			if (factor < 1) {
 				// avoid negative zoom
@@ -491,11 +500,8 @@ jQuery.fn.springy = function(params) {
 				snap_to_canvas();
 			layout.zoomFactor = zoomFactor;
 		} else {
-			var factor = Math.pow(layout.scaleFactor,clicks);
-			var fontsize = layout.fontsize * factor;
-			if (fontsize < 1) fontsize = 1;
-			if (fontsize > 30) fontsize = 30;
-			layout.fontsize = fontsize;
+			let factor = Math.pow(layout.scaleFactor,clicks);
+			layout.scaleFontSize(factor);
 		} 
 		renderer.start(true);
 	}
@@ -571,18 +577,17 @@ jQuery.fn.springy = function(params) {
 
 	var getTextWidth = function(node) {
 		var text = (node.data.label !== undefined) ? node.data.label : node.id;
-		var fontsize = layout.fontsize;
-		if (node._width && node.fontsize === fontsize && node._width[text])
+		if (node._width && node.fontsize === layout.fontsize && node._width[text])
 			return node._width[text];
 
 		ctx.save();
-		ctx.font = fontsize.toString() + 'px ' + nodeFont;
+		ctx.font = layout.nodeFont;
 		var width = ctx.measureText(text).width;
 		ctx.restore();
 
 		node._width || (node._width = {});
 		node._width[text] = width;
-		node.fontsize = fontsize;
+		node.fontsize = layout.fontsize;
 
 		return width;
 	};
@@ -735,11 +740,10 @@ jQuery.fn.springy = function(params) {
 			// label
 			if (edge.data.label !== undefined && edge.data.label.length) {
 				var text = edge.data.label;
-				var l_fontsize = fontsize * 9 / 10;
-				if (l_fontsize * layout.zoomFactor > 2.4) { // DS: hide tiny label
+				if (layout.edgeFontsize * layout.zoomFactor > 2.4) { // DS: hide tiny label
 					ctx.save();
 					ctx.textAlign = "center";
-					ctx.font = l_fontsize.toString() + 'px ' + edgeFont;
+					ctx.font = layout.edgeFont; 
 					if (edgeLabelBoxes) {
 						var boxWidth = ctx.measureText(text).width * 1.1;
 						var px = (x1+x2)/2;
@@ -754,9 +758,9 @@ jQuery.fn.springy = function(params) {
 						ctx.textBaseline = "middle";
 						ctx.fillStyle = stroke;
 						var angle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
-						var displacement = -(l_fontsize / 3.0);
+						var displacement = -(layout.edgeFontsize / 10.0);
 						if (edgeLabelsUpright && (angle > Math.PI/2 || angle < -Math.PI/2)) {
-							displacement = l_fontsize / 3.0;
+							displacement = layout.edgeFontsize / 3.0;
 							angle += Math.PI;
 						}
 						var textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
@@ -773,28 +777,27 @@ jQuery.fn.springy = function(params) {
 			var s = toScreen(p);
 			var boxWidth = node.getWidth();
 			var boxHeight = node.getHeight() * 1.2;
-			var alpha = '0.8';
 			var color = typeof(node.data.color) !== 'undefined' ? node.data.color : ''; 
-			var textColor = 'Black';
+			var textColor = nodeTextColor;
 			// fill background
 			if (selected !== null && selected.node !== null && selected.node.id === node.id && selected.inside) {
-				shadowColor = 'DarkOrange';
-				shadowOffset = 0;
+				shadowColor = activeShadowColor;
+				shadowOffset = activeShadowOffset;
 			} else {
-				shadowColor = "rgba(50, 50, 50, 0.3)";
+				shadowColor = passiveShadowColor;
 				shadowOffset = layout.fontsize * layout.zoomFactor;
 			}
 			if (color.length > 0) {
 				color1 = color;
 				color2 = color;
 			} else {
-				color1 = "rgba(176, 224, 230,"+alpha+")"; // PowderBlue - rgb(176, 224, 230)
-				color2 = "rgba(176, 196, 222,"+alpha+")"; // LightSteelBlue - rgb(176, 196, 222)
+				color1 = defaultColor1;
+				color2 = defaultColor2;
 			}
 			if (node.data.image == undefined) {
 				ctx.save();
 				ctx.lineWidth = layout.fontsize/12;
-				ctx.strokeStyle = "SlateGray";
+				ctx.strokeStyle = nodestrokeStyle;
 
 				/********* Draw Shape **********/
 				/*******************************/
@@ -894,9 +897,9 @@ jQuery.fn.springy = function(params) {
 				ctx.translate(s.x, s.y);
 				// Node Label Text
 				if (node.fontsize * layout.zoomFactor > 2.4) { // DS: hide tiny label
-					ctx.textAlign = "center";
-					ctx.textBaseline = "middle";
-					ctx.font = node.fontsize.toString() + 'px ' + nodeFont;
+					ctx.textAlign = nodeTextAlign;
+					ctx.textBaseline = nodeTextBaseline;
+					ctx.font = layout.nodeFont; // node.fontsize.toString() + 'px ' + nodeFont;
 					ctx.fillStyle = textColor;
 					var text = typeof(node.data.label) !== 'undefined' ? node.data.label : node.id;
 					ctx.fillText(text, 0, 0);
