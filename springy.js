@@ -328,7 +328,7 @@
 
 	// -----------
 	var Layout = Springy.Layout = {};
-	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor) {
+	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor, pinWeight) {
 		this.graph = graph;
 		this.stiffness = stiffness; // spring stiffness constant
 		this.repulsion = repulsion; // repulsion constant
@@ -340,8 +340,10 @@
 		this.fontname = fontname || "Verdana, sans-serif";
 		this.nodeFont = this.fontsize.toString() + 'px ' + this.fontname;
 		this.edgeFont = this.edgeFontsize.toString() + 'px ' + this.fontname;
+		this.pinWeight = pinWeight || 10;
 		this.scaleFactor = 1.025;	// scale factor for each wheel click.
 		this.zoomFactor = zoomFactor || 1.0;	// current zoom factor for the whole canvas.
+		this.selected = null;
 		this.energy = 0;
 		this.nodePoints = {}; // keep track of points associated with nodes
 		this.edgeSprings = {}; // keep track of springs associated with edges
@@ -446,6 +448,9 @@
 		t.edgeFont = t.edgeFontsize.toString() + 'px ' + t.fontname;
 	};
 
+	Layout.ForceDirected.prototype.setPinWeight = function(weight) {
+		this.pinWeight = weight;
+	};
 
 	var timeslice = 200000;
 	var loops_cnt = timeslice;
@@ -632,6 +637,35 @@
 		return min;
 	}
 
+	Layout.ForceDirected.prototype.selectNode = function(node_id) {
+		var t = this;
+		t.selected = t.findNode(node_id);
+		return t.selected;
+	}
+
+	Layout.ForceDirected.prototype.isSelectedNode = function(node_id) {
+		var t = this;
+		return (t.selected !== null && t.selected.node !== null 
+			&& (t.selected.node.id === node_id || node_id === null)
+			&& t.selected.inside);
+	}
+
+	Layout.ForceDirected.prototype.isSelectedEdge = function(edge) {
+		var t = this;
+		return (t.selected !== null && t.selected.node !== null 
+			&& (t.selected.node.id === edge.source.id || t.selected.node.id === edge.target.id)
+			&& t.selected.inside);
+	}
+			
+	Layout.ForceDirected.prototype.setNodeProperties = function(label, color, shape) {
+		var t = this;
+		if (t.isSelectedNode(null)) {
+			t.selected.node.data.label = label;
+			t.selected.node.data.color = color;
+			t.selected.node.data.shape = shape;
+		}
+	}
+
 	// returns [bottomleft, topright]
 	Layout.ForceDirected.prototype.getBoundingBox = function() {
 		var bottomleft = new Vector(-2,-2);
@@ -763,6 +797,14 @@
 	Renderer.prototype.scaleFontSize = function(factor) {
 		this.layout.scaleFontSize(factor);
 		this.start(true);
+	};
+
+	Renderer.prototype.setPinWeight = function(weight) {
+		this.layout.setPinWeight(weight);
+	};
+
+	Renderer.prototype.setNodeProperties = function(label, color, shape) {
+		this.layout.setNodeProperties(label, color, shape);
 	};
 
 	/**

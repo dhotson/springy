@@ -59,8 +59,7 @@ jQuery.fn.springy = function(params) {
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
 
-	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor);
-	var selected = null;
+	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor, pinWeight);
 
 	var color1 = "#7FEFFF"; // blue
 	var color2 = "#50C0FF"; 
@@ -71,7 +70,7 @@ jQuery.fn.springy = function(params) {
 	var currentBB = layout.getBoundingBox();
 	var targetBB = {bottomleft: new Springy.Vector(-2, -2), topright: new Springy.Vector(2, 2)};
 	if (params.selected) {
-		selected = layout.findNode(params.selected);
+		layout.selectNode(params.selected);
 	}
 	if (zoomFactor !== !.0) {
 		ctx.scale(zoomFactor,zoomFactor);
@@ -388,16 +387,14 @@ jQuery.fn.springy = function(params) {
 		var pos = jQuery(this).offset();
 		var p1 = ctx.transformedPoint(e.pageX - pos.left, e.pageY - pos.top);
 		var p = fromScreen(p1);
-		selected = nearest = dragged = layout.nearest(p);
+		layout.selected = nearest = dragged = layout.nearest(p);
 		point_clicked = p;
-		if (selected.node !== null) {
-			// DS 13.Oct 2019 : fix or just move selected node depending on pinWeight
-			dragged.point.m = pinWeight;
-		}
-		mouse_inside_node(selected, p);
-		if (selected.inside) {
+		mouse_inside_node(layout.selected, p);
+		if (layout.selected.inside) {
+			// DS 13.Oct 2019 : fixate or just move selected node depending on pinWeight
+			dragged.point.m = layout.pinWeight;
 			if (nodeSelected) {
-				nodeSelected(selected.node);
+				nodeSelected(layout.selected.node);
 			}
 		} else {
 			lastX = e.offsetX || (e.pageX - pos.left);
@@ -407,15 +404,15 @@ jQuery.fn.springy = function(params) {
 			canvas_dragged = false;
 		}
 
-		renderer.start(selected.inside);
+		renderer.start(layout.selected.inside);
 	});
 
 	// Basic double click handler
 	jQuery(canvas).dblclick(function(e) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
-		selected = layout.nearest(p);
-		var node = selected.node;
+		layout.selected = layout.nearest(p);
+		var node = layout.selected.node;
 		if (node && node.data && node.data.ondoubleclick) {
 			node.data.ondoubleclick();
 		}
@@ -693,9 +690,7 @@ jQuery.fn.springy = function(params) {
 
 			var weight = (edge.data.weight !== undefined) ? edge.data.weight : 1.0;
 			weight = weight * (fontsize/8);
-			if (selected !== null && selected.node !== null 
-			&& (selected.node.id === edge.source.id || selected.node.id === edge.target.id)
-			&& selected.inside) {
+			if (layout.isSelectedEdge(edge)) {
 				// highlight edges of the selected node
 				weight = weight * 2;
 				stroke = "rgba(255, 140, 0,0.7)"; 
@@ -780,7 +775,7 @@ jQuery.fn.springy = function(params) {
 			var color = typeof(node.data.color) !== 'undefined' ? node.data.color : ''; 
 			var textColor = nodeTextColor;
 			// fill background
-			if (selected !== null && selected.node !== null && selected.node.id === node.id && selected.inside) {
+			if (layout.isSelectedNode(node.id)) {
 				shadowColor = activeShadowColor;
 				shadowOffset = activeShadowOffset;
 			} else {
