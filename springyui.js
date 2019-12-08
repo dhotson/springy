@@ -72,7 +72,7 @@ jQuery.fn.springy = function(params) {
 	if (params.selected) {
 		layout.selectNode(params.selected);
 	}
-	if (zoomFactor !== !.0) {
+	if (zoomFactor !== 1.0) {
 		ctx.scale(zoomFactor,zoomFactor);
 	}
 	if (params.x_offset || params.y_offset) {
@@ -488,7 +488,7 @@ jQuery.fn.springy = function(params) {
 				ctx.scale(factor,factor);
 				zoomFactor = zoomFactor * factor;
 			}
-			if (factor > 1 && zoomFactor < 8) {
+			if (factor > 1 && zoomFactor < 12) {
 				ctx.scale(factor,factor);
 				zoomFactor = zoomFactor * factor;
 			}
