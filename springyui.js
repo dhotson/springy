@@ -28,6 +28,7 @@ Copyright (c) 2010 Dennis Hotson
 
 jQuery.fn.springy = function(params) {
 	const graph = this.graph = params.graph || new Springy.Graph();
+	const boosted = true;
 	const fontname = "Verdana, sans-serif";
 	const nodeTextColor = 'Black';
 	const nodeTextAlign = "center";
@@ -54,11 +55,12 @@ jQuery.fn.springy = function(params) {
 	const edgeLabelsUpright = true;
 	const edgeLabelBoxes = params.edgeLabelBoxes || false;
 	const useGradient = params.useGradient || false;
-	var fontsize = params.fontsize * 1.0 || Math.max(12 - Math.round(Math.sqrt(graph.nodes.length)), 4);
+	var fontsize = params.fontsize * 1.0 || Math.max(12.0 - Math.sqrt(graph.nodes.length) / 3.0, 0.5);
 	var zoomFactor = params.zoomFactor * 1.0 || 1.0;
+	zoomFactor = Math.max(Math.min(zoomFactor, 12), 1);
+	fontsize = Math.max(Math.min(fontsize, 30), 1);
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
-
 	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor, pinWeight);
 
 	var color1 = "#7FEFFF"; // blue
@@ -496,6 +498,7 @@ jQuery.fn.springy = function(params) {
 			if (clicks < 0)
 				snap_to_canvas();
 			layout.zoomFactor = zoomFactor;
+			layout.scaleFontSize(1.0);
 		} else {
 			let factor = Math.pow(layout.scaleFactor,clicks);
 			layout.scaleFontSize(factor);
@@ -571,8 +574,18 @@ jQuery.fn.springy = function(params) {
 		}
 	}
 
-
-	var getTextWidth = function(node) {
+	var getTextWidth = boosted ? function(node) {
+		if (node._width && node.fontsize === layout.fontsize)
+			return node._width;
+		var text = (node.data.label !== undefined) ? node.data.label : node.id;
+		ctx.save();
+		ctx.font = layout.nodeFont;
+		node._width = ctx.measureText(text).width;
+		node.fontsize = layout.fontsize;
+		ctx.restore();
+		return node._width;
+	} :
+	function(node) {
 		var text = (node.data.label !== undefined) ? node.data.label : node.id;
 		if (node._width && node.fontsize === layout.fontsize && node._width[text])
 			return node._width[text];
@@ -634,21 +647,21 @@ jQuery.fn.springy = function(params) {
 			ctx.clearRect(0,0,canvas.width,canvas.height);
 		},
 		function drawEdge(edge, p1, p2) {
-			var x1 = toScreen(p1).x;
-			var y1 = toScreen(p1).y;
-			var x2 = toScreen(p2).x;
-			var y2 = toScreen(p2).y;
+			const x1 = toScreen(p1).x;
+			const y1 = toScreen(p1).y;
+			const x2 = toScreen(p2).x;
+			const y2 = toScreen(p2).y;
 
-			var direction = new Springy.Vector(x2-x1, y2-y1);
-			var normal = direction.normal().normalise();
+			const direction = new Springy.Vector(x2-x1, y2-y1);
+			const normal = direction.normal().normalise();
 
-			var from = graph.getEdges(edge.source, edge.target);
-			var to = graph.getEdges(edge.target, edge.source);
+			const from = graph.getEdges(edge.source, edge.target);
+			const to = graph.getEdges(edge.target, edge.source);
 
-			var total = from.length + to.length;
+			const total = from.length + to.length;
 
 			// Figure out edge's position in relation to other edges between the same nodes
-			var n = 0;
+			let n = 0;
 			for (var i=0; i<from.length; i++) {
 				if (from[i].id === edge.id) {
 					n = i;
@@ -656,18 +669,18 @@ jQuery.fn.springy = function(params) {
 			}
 
 			//change default to  10.0 to allow text fit between edges
-			var spacing = 12.0;
+			const spacing = 12.0;
 
 			// Figure out how far off center the line should be drawn
-			var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
+			const offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
 
-			var s1 = toScreen(p1).add(offset);
-			var s2 = toScreen(p2).add(offset);
+			const s1 = toScreen(p1).add(offset);
+			const s2 = toScreen(p2).add(offset);
 
-			var boxWidth = edge.target.getWidth() * 1.2;
-			var boxHeight = edge.target.getHeight() * 2.0; // extra space for target polygons
+			let boxWidth = edge.target.getWidth() * 1.2;
+			let boxHeight = edge.target.getHeight() * 2.0; // extra space for target polygons
 
-			var intersection = intersect_line_box(s1, s2, {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
+			let intersection = intersect_line_box(s1, s2, {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
 
 			if (!intersection) {
 				intersection = s2;
@@ -677,19 +690,15 @@ jQuery.fn.springy = function(params) {
 			boxHeight = edge.source.getHeight() * 2.0; // extra space for source polygons
 			
 			// DS: respect source node!
-			var lineStart = intersect_line_box(s1, s2, {x: x1-boxWidth/2.0, y: y1-boxHeight/2.0}, boxWidth, boxHeight);
+			let lineStart = intersect_line_box(s1, s2, {x: x1-boxWidth/2.0, y: y1-boxHeight/2.0}, boxWidth, boxHeight);
 			
 			if (!lineStart) {
 				lineStart = s1;
 			}
 
-			var stroke = (edge.data.color !== undefined) ? edge.data.color : '#000000';
-			var fontsize = layout.fontsize;
-			var arrowWidth;
-			var arrowLength;
-
-			var weight = (edge.data.weight !== undefined) ? edge.data.weight : 1.0;
-			weight = weight * (fontsize/8);
+			let stroke = (edge.data.color !== undefined) ? edge.data.color : '#000000';
+			let weight = (edge.data.weight !== undefined) ? edge.data.weight : 1.0;
+			weight = weight * (layout.fontsize/8);
 			if (layout.isSelectedEdge(edge)) {
 				// highlight edges of the selected node
 				weight = weight * 2;
@@ -697,13 +706,13 @@ jQuery.fn.springy = function(params) {
 			}
 			ctx.save(); // DS: add save
 			ctx.lineWidth = Math.max(weight, 0.1);
-			arrowWidth = 1 + ctx.lineWidth;
-			arrowLength = fontsize*1.8;
+			const arrowWidth = 1 + ctx.lineWidth;
+			const arrowLength = layout.fontsize*1.8;
 
-			var directional = (edge.data.directional !== undefined) ? edge.data.directional : true;
+			const directional = (edge.data.directional !== undefined) ? edge.data.directional : true;
 
 			// line
-			var lineEnd;
+			let lineEnd;
 			if (directional) {
 				lineEnd = intersection.subtract(direction.normalise().multiply(arrowLength * 0.5));
 			} else {
@@ -734,31 +743,31 @@ jQuery.fn.springy = function(params) {
 
 			// label
 			if (edge.data.label !== undefined && edge.data.label.length) {
-				var text = edge.data.label;
-				if (layout.edgeFontsize * layout.zoomFactor > 2.4) { // DS: hide tiny label
+				let text = edge.data.label;
+				if (layout.realEdgeFontsize > 2.4) { // DS: hide tiny label
 					ctx.save();
 					ctx.textAlign = "center";
 					ctx.font = layout.edgeFont; 
 					if (edgeLabelBoxes) {
-						var boxWidth = ctx.measureText(text).width * 1.1;
-						var px = (x1+x2)/2;
-						var py = (y1+y2)/2 - fontsize/2;
+						let boxWidth = ctx.measureText(text).width * 1.1;
+						let px = (x1+x2)/2;
+						let py = (y1+y2)/2 - layout.fontsize/2;
 						ctx.textBaseline = "top";
 						ctx.fillStyle = "#EEEEEE"; // label background
-						ctx.fillRect(px-boxWidth/2, py, boxWidth, fontsize);
+						ctx.fillRect(px-boxWidth/2, py, boxWidth, layout.fontsize);
 
 						ctx.fillStyle = "darkred";
 						ctx.fillText(text, px, py);
 					} else {
 						ctx.textBaseline = "middle";
 						ctx.fillStyle = stroke;
-						var angle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
-						var displacement = -(layout.edgeFontsize / 10.0);
+						let angle = Math.atan2(s2.y - s1.y, s2.x - s1.x);
+						let displacement = -(layout.edgeFontsize / 10.0);
 						if (edgeLabelsUpright && (angle > Math.PI/2 || angle < -Math.PI/2)) {
 							displacement = layout.edgeFontsize / 3.0;
 							angle += Math.PI;
 						}
-						var textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
+						let textPos = s1.add(s2).divide(2).add(normal.multiply(displacement));
 						ctx.translate(textPos.x, textPos.y);
 						ctx.rotate(angle);
 						ctx.fillText(text, 0,-2);
@@ -769,10 +778,9 @@ jQuery.fn.springy = function(params) {
 
 		},
 		function drawNode(node, p) {
-			var s = toScreen(p);
-			var boxWidth = node.getWidth();
-			var boxHeight = node.getHeight() * 1.2;
-			var color = typeof(node.data.color) !== 'undefined' ? node.data.color : ''; 
+			const s = toScreen(p);
+			const boxWidth = node.getWidth();
+			const boxHeight = node.getHeight() * 1.2;
 			var textColor = nodeTextColor;
 			// fill background
 			if (layout.isSelectedNode(node.id)) {
@@ -780,11 +788,11 @@ jQuery.fn.springy = function(params) {
 				shadowOffset = activeShadowOffset;
 			} else {
 				shadowColor = passiveShadowColor;
-				shadowOffset = layout.fontsize * layout.zoomFactor;
+				shadowOffset = layout.realFontsize;
 			}
-			if (color.length > 0) {
-				color1 = color;
-				color2 = color;
+			if (typeof(node.data.color) !== 'undefined') {
+				color1 = node.data.color;
+				color2 = node.data.color;
 			} else {
 				color1 = defaultColor1;
 				color2 = defaultColor2;
@@ -891,12 +899,12 @@ jQuery.fn.springy = function(params) {
 				}
 				ctx.translate(s.x, s.y);
 				// Node Label Text
-				if (node.fontsize * layout.zoomFactor > 2.4) { // DS: hide tiny label
+				if (layout.realFontsize > 2.4) { // DS: hide tiny label
 					ctx.textAlign = nodeTextAlign;
 					ctx.textBaseline = nodeTextBaseline;
-					ctx.font = layout.nodeFont; // node.fontsize.toString() + 'px ' + nodeFont;
+					ctx.font = layout.nodeFont; 
 					ctx.fillStyle = textColor;
-					var text = typeof(node.data.label) !== 'undefined' ? node.data.label : node.id;
+					let text = typeof(node.data.label) !== 'undefined' ? node.data.label : node.id;
 					ctx.fillText(text, 0, 0);
 				}
 				ctx.restore();
@@ -912,7 +920,7 @@ jQuery.fn.springy = function(params) {
 					// First time seeing an image with this src address, so add it to our set of image objects
 					// Note: we index images by their src to avoid making too many duplicates
 					nodeImages[src] = {};
-					var img = new Image();
+					let img = new Image();
 					nodeImages[src].object = img;
 					img.addEventListener("load", function () {
 						// HTMLImageElement objects are very finicky about being used before they are loaded, so we set a flag when it is done
@@ -930,6 +938,7 @@ jQuery.fn.springy = function(params) {
 			canvasPos.x_offset = xform.e / layout.zoomFactor;
 			canvasPos.y_offset = xform.f / layout.zoomFactor;
 			canvasPos.energy = layout.energy;
+			canvasPos.fps = layout.fps;
 			return canvasPos;
 		},
 		function onRenderStop() {
@@ -943,6 +952,17 @@ jQuery.fn.springy = function(params) {
 		function onRenderFrame() {
 			if (RenderFrameCall) 
 				RenderFrameCall(renderer);
+		},
+		function zoomCanvas(factor) {
+			let pt = ctx.transformedPoint(canvas.width/2,canvas.height/2);
+			ctx.translate(pt.x,pt.y);
+			ctx.scale(factor,factor);
+			ctx.translate(-pt.x,-pt.y);
+			if (factor < 1) {
+				snap_to_canvas();
+			} else {
+				ctx.clearRect(0,0,canvas.width,canvas.height);
+			}
 		}
 	);
 

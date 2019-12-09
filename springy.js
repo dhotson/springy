@@ -41,7 +41,7 @@
         root.Springy = factory();
     }
 }(this, function() {
-
+	const boosted = true; // DS: 2.7fps vs 11.7fps
 	var Springy = {};
 
 	var Graph = Springy.Graph = function() {
@@ -343,10 +343,14 @@
 		this.pinWeight = pinWeight || 10;
 		this.scaleFactor = 1.025;	// scale factor for each wheel click.
 		this.zoomFactor = zoomFactor || 1.0;	// current zoom factor for the whole canvas.
+		this.realFontsize = this.fontsize * this.zoomFactor;
+		this.realEdgeFontsize = this.edgeFontsize * this.zoomFactor;
 		this.selected = null;
 		this.energy = 0;
 		this.nodePoints = {}; // keep track of points associated with nodes
 		this.edgeSprings = {}; // keep track of springs associated with edges
+		this.times = [];
+		this.fps = 0;
 	};
 
 	Layout.ForceDirected.prototype.point = function(node) {
@@ -439,27 +443,38 @@
 
 	Layout.ForceDirected.prototype.scaleFontSize = function(factor) {
 		const t = this;
-		let fontsize = t.fontsize * factor;
-		if (fontsize < 1) fontsize = 1;
-		if (fontsize > 30) fontsize = 30;
-		t.edgeFontsize = fontsize * 9 / 10;
-		t.fontsize = fontsize;
+		let realFontsize = t.fontsize * t.zoomFactor * factor; 
+		realFontsize = Math.max(Math.min(realFontsize, 30), 0.5);
+		t.realFontsize = realFontsize;
+		t.fontsize = realFontsize / t.zoomFactor;
+		t.realEdgeFontsize = realFontsize * 9 / 10;
+		t.edgeFontsize = t.fontsize * 9 / 10;
 		t.nodeFont = t.fontsize.toString() + 'px ' + t.fontname;
 		t.edgeFont = t.edgeFontsize.toString() + 'px ' + t.fontname;
+	};
+
+	Layout.ForceDirected.prototype.scaleZoomFactor = function(factor) {
+		let zoomFactor = this.zoomFactor * factor;
+		zoomFactor = Math.max(Math.min(zoomFactor, 12.0), 1.0);
+		if (this.zoomFactor !== zoomFactor) {
+			this.zoomFactor = zoomFactor;
+			return true;
+		} else {
+			return false;
+		}
 	};
 
 	Layout.ForceDirected.prototype.setPinWeight = function(weight) {
 		this.pinWeight = weight;
 	};
 
-	var timeslice = 200000;
-	var loops_cnt = timeslice;
-	var sliceTimer = null;
+	let timeslice = 200000;
+	let loops_cnt = timeslice;
+	let sliceTimer = null;
 	function tic_fork (cnt, stage) {
 		loops_cnt -= cnt;
 		if (loops_cnt <= 0) {		// DS: with 1,000 nodes we have 1,000,000 iterations, thats why i slice the time.
 			loops_cnt = timeslice;
-			//window.setTimeout(function () {console.log('tic-'+stage);});
 			// console.log('tic'+stage);
 			if (! sliceTimer) {
 				sliceTimer = window.setTimeout(function (){
@@ -470,7 +485,30 @@
 		}
 	}
 	// Physics stuff
-	Layout.ForceDirected.prototype.applyCoulombsLaw = function() {
+	Layout.ForceDirected.prototype.applyCoulombsLaw = boosted ? function() {
+		const len = this.graph.nodes.length;
+		let dir = new Vector(0,0);
+		for(let n=0;n<len;n++) {
+			const point1 = this.nodePoints[n];
+			for(let m=n+1;m<len;m++) {
+				const point2 = this.nodePoints[m];
+				dir.x = point1.p.x - point2.p.x;	// subtract
+				dir.y = point1.p.y - point2.p.y;
+				const distance = Math.sqrt(dir.x*dir.x+dir.y*dir.y) + 0.3;	// magnitude
+				dir.x /= distance;		// normalise
+				dir.y /= distance;
+				const force = this.repulsion / (distance * distance * 0.5);
+				dir.x *= force;
+				dir.y *= force; // apply forces
+				point1.a.x += dir.x / point1.m;
+				point1.a.y += dir.y / point1.m;
+				point2.a.x -= dir.x / point2.m;
+				point2.a.y -= dir.y / point2.m;
+			};
+			tic_fork (len, 1);
+		};
+	} :
+	function() {
 		this.eachNode(function(n1, point1) {
 			this.eachNode(function(n2, point2) {
 				if (point1 !== point2)
@@ -488,7 +526,26 @@
 		});
 	};
 
-	Layout.ForceDirected.prototype.applyHookesLaw = function() {
+	Layout.ForceDirected.prototype.applyHookesLaw = boosted ? function() {
+		let dir = new Vector(0,0);
+		for(let n=0;n<this.graph.edges.length;n++) {
+			const spring = this.spring(this.graph.edges[n]);
+			dir.x = spring.point2.p.x - spring.point1.p.x;	// subtract
+			dir.y = spring.point2.p.y - spring.point1.p.y;
+			const distance = Math.sqrt(dir.x*dir.x+dir.y*dir.y);	// magnitude
+			let displacement = (spring.length - distance) * spring.k * -0.5;
+			dir.x = dir.x / distance || 0;		// normalise
+			dir.y = dir.y / distance || 0;		// direction
+			dir.x *= displacement;
+			dir.y *= displacement;
+			spring.point1.a.x += dir.x / spring.point1.m;
+			spring.point1.a.y += dir.y / spring.point1.m;
+			spring.point2.a.x -= dir.x / spring.point2.m;
+			spring.point2.a.y -= dir.y / spring.point2.m;
+		};
+	} :
+	function() {
+		let dir = new Vector(0,0);
 		this.eachSpring(function(spring){
 			var d = spring.point2.p.subtract(spring.point1.p); // the direction of the spring
 			var displacement = spring.length - d.magnitude();
@@ -573,6 +630,13 @@
 
 		if (onRenderStart !== undefined) { onRenderStart(); }
 		Springy.requestAnimationFrame(function step() {
+			const now = performance.now();
+			while (t.times.length > 0 && t.times[0] <= now - 10000) {
+			  t.times.shift();
+			}
+			t.times.push(now);
+			t.fps = t.times.length / 10;
+
 			if (do_update) {
 				t.tick(0.03);
 			}
@@ -769,7 +833,7 @@
 	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
 	 * @param onRenderFrame optional callback function that gets executed after each frame is rendered.
 	 */
-	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, getCanvasPos, onRenderStop, onRenderStart, onRenderFrame) {
+	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, getCanvasPos, onRenderStop, onRenderStart, onRenderFrame, zoomCanvas) {
 		this.layout = layout;
 		this.clear = clear;
 		this.drawEdge = drawEdge;
@@ -778,7 +842,7 @@
 		this.onRenderStop = onRenderStop;
 		this.onRenderStart = onRenderStart;
 		this.onRenderFrame = onRenderFrame;
-
+		this.zoomCanvas = zoomCanvas;
 		this.layout.graph.addGraphListener(this);
 	}
 
@@ -799,6 +863,15 @@
 		this.start(true);
 	};
 
+	Renderer.prototype.scaleZoomFactor = function(factor) {
+		var t = this;
+		if (t.layout.scaleZoomFactor(factor)) {
+			t.layout.scaleFontSize(1.0);
+			if (t.zoomCanvas !== undefined) { t.zoomCanvas(factor); }
+			t.start(true);
+		}
+	};
+
 	Renderer.prototype.setPinWeight = function(weight) {
 		this.layout.setPinWeight(weight);
 	};
@@ -817,7 +890,25 @@
 	 * @param done An optional callback function that gets executed when the springy algorithm stops,
 	 * either because it ended or because stop() was called.
 	 */
-	Renderer.prototype.start = function(do_update) {
+	Renderer.prototype.start = boosted ? function(do_update) {
+		var t = this;
+		this.layout.start(function render() {
+			t.clear();
+			for(let n=0;n<t.layout.graph.edges.length;n++) {
+				let spring = t.layout.spring(t.layout.graph.edges[n]);
+				t.drawEdge(t.layout.graph.edges[n], spring.point1.p, spring.point2.p);
+			}
+			tic_fork (t.layout.graph.edges.length*100, 4);
+			for(let n=0;n<t.layout.graph.nodes.length;n++) {
+				let point = t.layout.point(t.layout.graph.nodes[n]);
+				t.drawNode(t.layout.graph.nodes[n], point.p);
+			}
+			tic_fork (t.layout.graph.nodes.length*100, 5);
+			
+			if (t.onRenderFrame !== undefined) { t.onRenderFrame(); }
+		}, this.onRenderStop, this.onRenderStart, do_update);
+	} :
+	function(do_update) {
 		var t = this;
 		this.layout.start(function render() {
 			t.clear();
