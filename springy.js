@@ -41,7 +41,7 @@
         root.Springy = factory();
     }
 }(this, function() {
-	const boosted = true; // DS: 2.7fps vs 11.7fps
+	const boosted = typeof(Float64Array) !== 'undefined' ? 2 : 1; // DS: 0: 2.7fps vs 1: 11.7fps vs 2: 18.4fps
 	var Springy = {};
 
 	var Graph = Springy.Graph = function() {
@@ -61,8 +61,11 @@
 
 	// Data fields used by layout algorithm in this file:
 	// this.data.mass
+	// this.data.insulator
 	// Data used by default renderer in springyui.js
 	// this.data.label
+	// this.data.color
+	// this.inside
 	};
 
 	var Edge = Springy.Edge = function(id, source, target, data) {
@@ -346,6 +349,7 @@
 		this.realFontsize = this.fontsize * this.zoomFactor;
 		this.realEdgeFontsize = this.edgeFontsize * this.zoomFactor;
 		this.selected = null;
+		this.exciteMethod = 'none'; // none, downstream, upstream, connected
 		this.energy = 0;
 		this.nodePoints = {}; // keep track of points associated with nodes
 		this.edgeSprings = {}; // keep track of springs associated with edges
@@ -356,10 +360,11 @@
 	Layout.ForceDirected.prototype.point = function(node) {
 		if (!(node.id in this.nodePoints)) {
 			var mass = (node.data.mass !== undefined) ? parseFloat(node.data.mass) : 1.0;
+			var insulator = (node.data.insulator !== undefined) ? node.data.insulator : false;
 			// DS: load positions from user data
 			var x = (node.data.x !== undefined) ? parseFloat(node.data.x) : 10.0 * (Math.random() - 0.5);
 			var y = (node.data.y !== undefined) ? parseFloat(node.data.y) : 10.0 * (Math.random() - 0.5);
-			this.nodePoints[node.id] = new Layout.ForceDirected.Point(new Vector(x, y), mass);
+			this.nodePoints[node.id] = new Layout.ForceDirected.Point(new Vector(x, y), mass, insulator);
 		}
 
 		return this.nodePoints[node.id];
@@ -410,7 +415,6 @@
 		while (n--) {
 		  var rand =  Math.floor(Math.random() * length);
       	  sample[rand] = t.graph.nodes[rand]; // deduplicate
-		  //callback.call(t, rand, t.point(t.graph.nodes[rand]));
 		}
 		sample.forEach(function(n){
 			callback.call(t, n, t.point(n));
@@ -468,6 +472,10 @@
 		this.pinWeight = weight;
 	};
 
+	Layout.ForceDirected.prototype.setExciteMethod = function(exciteMethod) {
+		this.exciteMethod = exciteMethod;	
+	};
+
 	let timeslice = 200000;
 	let loops_cnt = timeslice;
 	let sliceTimer = null;
@@ -485,7 +493,38 @@
 		}
 	}
 	// Physics stuff
-	Layout.ForceDirected.prototype.applyCoulombsLaw = boosted ? function() {
+	Layout.ForceDirected.prototype.applyCoulombsLaw = boosted === 2 ? function() {
+		// Boosted method 2 -- hand written assembler code - loops variables are transformed into static memory array addresses
+		const len = this.graph.nodes.length;
+		let dir = new Float64Array(8); 
+		dir[7] = this.repulsion;
+		// dir[0]=dir_x; dir[1]=dir_y; dir[2]=distance; dir[3]=force
+		// dir[4]=p1.x; dir[5]=p1.y; dir[6]=1/p1.m; dir[7]=repulsion
+		for(let n=0;n<len;n++) {
+			const point1 = this.nodePoints[n];
+			dir[4] = point1.p.x; 
+			dir[5] = point1.p.y;
+			dir[6] = 1 / point1.m;
+			for(let m=n+1;m<len;m++) {
+				const point2 = this.nodePoints[m];
+				dir[0] = dir[4] - point2.p.x;	// subtract
+				dir[1] = dir[5] - point2.p.y;
+				dir[2] = Math.sqrt(dir[0] * dir[0] + dir[1] * dir[1]) + 0.3;	// magnitude
+				dir[0] /= dir[2];	// normalise
+				dir[1] /= dir[2];
+				dir[3] = dir[7] / (dir[2] * dir[2] * 0.5);
+				dir[0] *= dir[3];
+				dir[1] *= dir[3]; // apply forces
+				point1.a.x += dir[0] * dir[6];
+				point1.a.y += dir[1] * dir[6];
+				point2.a.x -= dir[0] / point2.m;
+				point2.a.y -= dir[1] / point2.m;
+			};
+			tic_fork (len-n, 1);
+		};
+	} :
+	boosted ? function() {
+		// Boosted method 1 -- improved math, improved memory usage, inline functions
 		const len = this.graph.nodes.length;
 		let dir = new Vector(0,0);
 		for(let n=0;n<len;n++) {
@@ -505,7 +544,7 @@
 				point2.a.x -= dir.x / point2.m;
 				point2.a.y -= dir.y / point2.m;
 			};
-			tic_fork (len, 1);
+			tic_fork (len-n, 1);
 		};
 	} :
 	function() {
@@ -545,7 +584,6 @@
 		};
 	} :
 	function() {
-		let dir = new Vector(0,0);
 		this.eachSpring(function(spring){
 			var d = spring.point2.p.subtract(spring.point1.p); // the direction of the spring
 			var displacement = spring.length - d.magnitude();
@@ -564,6 +602,48 @@
 		});
 	};
 
+	Layout.ForceDirected.prototype.propagateExcitement = function() {
+		var t = this;
+		let method = t.exciteMethod;
+		let cnt = 1;
+		
+		this.eachNode(function(node, point) {
+			point.e = false;
+		});
+		if (method === 'none') return;
+		let method_fn = method === 'downstream' ? 
+			function(spring){
+				if (spring.point1.e && ! spring.point2.e && ! spring.point1.i) {
+					spring.point2.e = true;
+					cnt++;
+				}
+			} : method === 'upstream' ? 
+			function(spring){
+				if (spring.point2.e && ! spring.point1.e && ! spring.point2.i) {
+					spring.point1.e = true;
+					cnt++;
+				}
+			} : method === 'connected' ? 
+			function(spring){
+				if (spring.point1.e && ! spring.point2.e && ! spring.point1.i) {
+					spring.point2.e = true;
+					cnt++;
+				}
+				if (spring.point2.e && ! spring.point1.e && ! spring.point2.i) {
+					spring.point1.e = true;
+					cnt++;
+				}
+			} : null;
+		if (method_fn) {
+			if (t.selected !== null && t.selected.node !== null) {
+				t.selected.point.e = true;	// set selected node Excitement
+			}
+			while (cnt) {
+				cnt = 0;
+				this.eachSpring(method_fn);
+			}
+		}
+	};
 
 	Layout.ForceDirected.prototype.updateVelocity = function(timestep) {
 		this.eachNode(function(node, point) {
@@ -714,11 +794,17 @@
 			&& t.selected.inside);
 	}
 
+	Layout.ForceDirected.prototype.isExcitedNode = function(node_id) {
+		return this.nodePoints[node_id].e || false;
+	}
+
 	Layout.ForceDirected.prototype.isSelectedEdge = function(edge) {
 		var t = this;
 		return (t.selected !== null && t.selected.node !== null 
 			&& (t.selected.node.id === edge.source.id || t.selected.node.id === edge.target.id)
-			&& t.selected.inside);
+			&& t.selected.inside)
+		|| (   t.isExcitedNode(edge.source.id) 
+		    && t.isExcitedNode(edge.target.id));
 	}
 			
 	Layout.ForceDirected.prototype.setNodeProperties = function(label, color, shape) {
@@ -799,9 +885,11 @@
 	};
 
 	// Point
-	Layout.ForceDirected.Point = function(position, mass) {
+	Layout.ForceDirected.Point = function(position, mass, insulator) {
 		this.p = position; // position
 		this.m = mass; // mass
+		this.i = insulator; // insulator
+		this.e = false; // excited
 		this.v = new Vector(0, 0); // velocity
 		this.a = new Vector(0, 0); // acceleration
 	};
@@ -850,6 +938,10 @@
 		this.start(true);
 	};
 
+	Renderer.prototype.propagateExcitement = function(method) {
+		this.propagateExcitement(method);
+	};
+
 	Renderer.prototype.getNodePositions = function(e) {
 		return JSON.stringify(this.layout.getNodePositions());
 	};
@@ -876,8 +968,15 @@
 		this.layout.setPinWeight(weight);
 	};
 
+	Renderer.prototype.setExciteMethod = function(exciteMethod) {
+		this.layout.setExciteMethod(exciteMethod);	// none, downstream, upstream, connected
+		this.layout.propagateExcitement();
+		this.start(true);
+	};
+
 	Renderer.prototype.setNodeProperties = function(label, color, shape) {
 		this.layout.setNodeProperties(label, color, shape);
+		this.start(true);
 	};
 
 	/**
