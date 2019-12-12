@@ -51,6 +51,7 @@ jQuery.fn.springy = function(params) {
 	const RenderStopCall = params.onRenderStop || null;
 	const RenderStartCall = params.onRenderStart || null;
 	const pinWeight = params.pinWeight || 1000.0;
+	const exciteMethod = params.exciteMethod || 'none';
 	var nodeImages = {};
 	const edgeLabelsUpright = true;
 	const edgeLabelBoxes = params.edgeLabelBoxes || false;
@@ -122,7 +123,7 @@ jQuery.fn.springy = function(params) {
 	var set_1colors = function() {
 	  ctx.fillStyle = color1;
 	  ctx.shadowColor = shadowColor;
-	  ctx.shadowBlur = layout.fontsize*layout.zoomFactor;
+	  ctx.shadowBlur = layout.fontsize*layout.zoomFactor*(shadowOffset===0 ? 2 : 1);
 	  ctx.shadowOffsetX = shadowOffset; 
 	  ctx.shadowOffsetY = shadowOffset;
 	};
@@ -395,6 +396,8 @@ jQuery.fn.springy = function(params) {
 		if (layout.selected.inside) {
 			// DS 13.Oct 2019 : fixate or just move selected node depending on pinWeight
 			dragged.point.m = layout.pinWeight;
+			layout.propagateExcitement();
+			
 			if (nodeSelected) {
 				nodeSelected(layout.selected.node);
 			}
@@ -698,7 +701,7 @@ jQuery.fn.springy = function(params) {
 
 			let stroke = (edge.data.color !== undefined) ? edge.data.color : '#000000';
 			let weight = (edge.data.weight !== undefined) ? edge.data.weight : 1.0;
-			weight = weight * (layout.fontsize/8);
+			weight *= Math.max(layout.fontsize/8, 1/layout.zoomFactor*0.3333);
 			if (layout.isSelectedEdge(edge)) {
 				// highlight edges of the selected node
 				weight = weight * 2;
@@ -783,7 +786,7 @@ jQuery.fn.springy = function(params) {
 			const boxHeight = node.getHeight() * 1.2;
 			var textColor = nodeTextColor;
 			// fill background
-			if (layout.isSelectedNode(node.id)) {
+			if (layout.isSelectedNode(node.id) || layout.isExcitedNode(node.id)) {
 				shadowColor = activeShadowColor;
 				shadowOffset = activeShadowOffset;
 			} else {
@@ -959,13 +962,12 @@ jQuery.fn.springy = function(params) {
 			ctx.scale(factor,factor);
 			ctx.translate(-pt.x,-pt.y);
 			if (factor < 1) {
-				snap_to_canvas();
-			} else {
 				ctx.clearRect(0,0,canvas.width,canvas.height);
+				snap_to_canvas();
 			}
 		}
 	);
-
+	renderer.setExciteMethod(exciteMethod);
 	renderer.start(true);
 
 	// helpers for figuring out where to draw arrows
