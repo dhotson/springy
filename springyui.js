@@ -44,7 +44,7 @@ jQuery.fn.springy = function(params) {
 	const repulsion = params.repulsion || 400.0;
 	const damping = params.damping || 0.5;
 	const minEnergyThreshold = params.minEnergyThreshold || 0.00001;
-	const maxSpeed = params.maxSpeed || Infinity; // nodes aren't allowed to exceed this speed
+	const maxSpeed = params.maxSpeed || 100.0; // nodes aren't allowed to exceed this speed
 	const nodeSelected = params.nodeSelected || null;
 	const nodePositions = params.nodePositions || null;
 	const RenderFrameCall = params.onRenderFrame || null;
@@ -709,7 +709,7 @@ jQuery.fn.springy = function(params) {
 			}
 			ctx.save(); // DS: add save
 			ctx.lineWidth = Math.max(weight, 0.1);
-			const arrowWidth = 1 + ctx.lineWidth;
+			const arrowWidth = layout.fontsize / 2;
 			const arrowLength = layout.fontsize*1.8;
 
 			const directional = (edge.data.directional !== undefined) ? edge.data.directional : true;
@@ -849,10 +849,10 @@ jQuery.fn.springy = function(params) {
 					triangle(s, boxWidth, boxHeight);
 				break;
 				case 'righttriangle':
-					polygon(s, boxWidth*1.2, boxHeight, 3, 2, true);
+					polygon(s, boxWidth*1.5, boxHeight, 3, 2, true);
 				break;
 				case 'lefttriangle':
-					polygon(s, boxWidth*1.2, boxHeight, 3, 4, true);
+					polygon(s, boxWidth*1.4, boxHeight, 3, 4, true);
 				break;
 				case 'invtriangle':
 					polygon(s, boxWidth, boxHeight, 3, false, true);

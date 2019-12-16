@@ -337,7 +337,7 @@
 		this.repulsion = repulsion; // repulsion constant
 		this.damping = damping; // velocity damping factor
 		this.minEnergyThreshold = minEnergyThreshold || 0.01; //threshold used to determine render stop
-		this.maxSpeed = maxSpeed || Infinity; // nodes aren't allowed to exceed this speed
+		this.maxSpeed = maxSpeed || 100.0; // nodes aren't allowed to exceed this speed
 		this.fontsize = fontsize || 8.0;
 		this.edgeFontsize = this.fontsize * 9 / 10;
 		this.fontname = fontname || "Verdana, sans-serif";
@@ -474,6 +474,19 @@
 
 	Layout.ForceDirected.prototype.setExciteMethod = function(exciteMethod) {
 		this.exciteMethod = exciteMethod;	
+	};
+
+	Layout.ForceDirected.prototype.setParameter = function(param) {
+		const t = this;
+		t.stiffness = param.stiffness || t.stiffness; // spring stiffness constant
+		t.repulsion = param.repulsion || t.repulsion; // repulsion constant
+		t.damping = param.damping || t.damping; // velocity damping factor
+		t.minEnergyThreshold = param.minEnergyThreshold || t.minEnergyThreshold; //threshold used to determine render stop
+		t.maxSpeed = param.maxSpeed || t.maxSpeed; // nodes aren't allowed to exceed this speed
+		const len = this.graph.edges.length;
+		for(let n=0;n<len;n++) {
+			this.edgeSprings[n].k = t.stiffness;
+		}
 	};
 
 	let timeslice = 200000;
@@ -729,6 +742,10 @@
 			if (t._stop || t.energy < t.minEnergyThreshold) {
 				t._started = false;
 				if (onRenderStop !== undefined) { onRenderStop(); }
+			} else if (UA.isSafari()) {
+				window.setTimeout(function (){
+					Springy.requestAnimationFrame(step);
+				}, 5);
 			} else {
 				Springy.requestAnimationFrame(step);
 			}
@@ -971,6 +988,11 @@
 	Renderer.prototype.setExciteMethod = function(exciteMethod) {
 		this.layout.setExciteMethod(exciteMethod);	// none, downstream, upstream, connected
 		this.layout.propagateExcitement();
+		this.start(true);
+	};
+
+	Renderer.prototype.setParameter = function(param) {
+		this.layout.setParameter(param);	
 		this.start(true);
 	};
 
