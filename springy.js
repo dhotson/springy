@@ -546,7 +546,7 @@
 				const point2 = this.nodePoints[m];
 				dir.x = point1.p.x - point2.p.x;	// subtract
 				dir.y = point1.p.y - point2.p.y;
-				const distance = Math.sqrt(dir.x*dir.x+dir.y*dir.y) + 0.3;	// magnitude
+				const distance = Math.sqrt(dir.x*dir.x+dir.y*dir.y) + 0.1;	// magnitude
 				dir.x /= distance;		// normalise
 				dir.y /= distance;
 				const force = this.repulsion / (distance * distance * 0.5);
@@ -566,7 +566,7 @@
 				if (point1 !== point2)
 				{
 					var d = point1.p.subtract(point2.p);
-                	var distance = d.magnitude() + 0.3; // DS 0.1 is too small: avoid massive forces at small distances (and divide by zero)
+                	var distance = d.magnitude() + 0.1; // avoid massive forces at small distances (and divide by zero)
 					var direction = d.normalise();
 
 					// apply force to each end point
@@ -626,23 +626,23 @@
 		if (method === 'none') return;
 		let method_fn = method === 'downstream' ? 
 			function(spring){
-				if (spring.point1.e && ! spring.point2.e && ! spring.point1.i) {
+				if (spring.point1.e && ! spring.point2.e && (! spring.point1.i || spring.point1 === t.selected.point)) {
 					spring.point2.e = true;
 					cnt++;
 				}
 			} : method === 'upstream' ? 
 			function(spring){
-				if (spring.point2.e && ! spring.point1.e && ! spring.point2.i) {
+				if (spring.point2.e && ! spring.point1.e && (! spring.point2.i || spring.point2 === t.selected.point)) {
 					spring.point1.e = true;
 					cnt++;
 				}
 			} : method === 'connected' ? 
 			function(spring){
-				if (spring.point1.e && ! spring.point2.e && ! spring.point1.i) {
+				if (spring.point1.e && ! spring.point2.e) {
 					spring.point2.e = true;
 					cnt++;
 				}
-				if (spring.point2.e && ! spring.point1.e && ! spring.point2.i) {
+				if (spring.point2.e && ! spring.point1.e) {
 					spring.point1.e = true;
 					cnt++;
 				}
@@ -692,7 +692,7 @@
 	Layout.ForceDirected.prototype.getNodePositions = function() {
 		var nodes_array = [];
 		this.eachNode(function(node, point) {
-			var element = {id:node.data.name, x:point.p.x, y:point.p.y, mass:point.m};
+			var element = {id:node.data.name, x:point.p.x, y:point.p.y, mass:point.m, active:point.e};
 			nodes_array.push(element);
 		});
 		return nodes_array;
@@ -957,6 +957,12 @@
 
 	Renderer.prototype.propagateExcitement = function(method) {
 		this.propagateExcitement(method);
+	};
+
+	Renderer.prototype.selectNode = function(name) {
+		this.layout.selectNode(name);
+		this.layout.propagateExcitement();
+		this.start(true);
 	};
 
 	Renderer.prototype.getNodePositions = function(e) {

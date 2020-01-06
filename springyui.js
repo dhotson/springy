@@ -33,6 +33,7 @@ jQuery.fn.springy = function(params) {
 	const nodeTextColor = 'Black';
 	const nodeTextAlign = "center";
 	const nodeTextBaseline = "middle";
+	const selectedShadowColor = 'Aqua';
 	const activeShadowColor = 'DarkOrange';
 	const activeShadowOffset = 0;
 	const passiveShadowColor = "rgba(50, 50, 50, 0.3)";
@@ -56,7 +57,7 @@ jQuery.fn.springy = function(params) {
 	const edgeLabelsUpright = true;
 	const edgeLabelBoxes = params.edgeLabelBoxes || false;
 	const useGradient = params.useGradient || false;
-	var fontsize = params.fontsize * 1.0 || Math.max(12.0 - Math.sqrt(graph.nodes.length) / 3.0, 0.5);
+	var fontsize = params.fontsize * 1.0 || Math.max(10.0 - Math.sqrt(graph.nodes.length) / 3.0, 0.5);
 	var zoomFactor = params.zoomFactor * 1.0 || 1.0;
 	zoomFactor = Math.max(Math.min(zoomFactor, 12), 1);
 	fontsize = Math.max(Math.min(fontsize, 30), 1);
@@ -580,7 +581,7 @@ jQuery.fn.springy = function(params) {
 	var getTextWidth = boosted ? function(node) {
 		if (node._width && node.fontsize === layout.fontsize)
 			return node._width;
-		var text = (node.data.label !== undefined) ? node.data.label : node.id;
+		var text = (node.data.label !== undefined && node.data.label) ? node.data.label : node.id;
 		ctx.save();
 		ctx.font = layout.nodeFont;
 		node._width = ctx.measureText(text).width;
@@ -672,7 +673,7 @@ jQuery.fn.springy = function(params) {
 			}
 
 			//change default to  10.0 to allow text fit between edges
-			const spacing = 12.0;
+			const spacing = layout.fontsize;
 
 			// Figure out how far off center the line should be drawn
 			const offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
@@ -786,7 +787,10 @@ jQuery.fn.springy = function(params) {
 			const boxHeight = node.getHeight() * 1.2;
 			var textColor = nodeTextColor;
 			// fill background
-			if (layout.isSelectedNode(node.id) || layout.isExcitedNode(node.id)) {
+			if (layout.isSelectedNode(node.id)) {
+				shadowColor = selectedShadowColor;
+				shadowOffset = activeShadowOffset;
+			} else if (layout.isExcitedNode(node.id)) {
 				shadowColor = activeShadowColor;
 				shadowOffset = activeShadowOffset;
 			} else {
