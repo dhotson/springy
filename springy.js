@@ -623,7 +623,12 @@
 		this.eachNode(function(node, point) {
 			point.e = false;
 		});
-		if (method === 'none') return;
+		if (method === 'none') {
+			if (t.selected !== null && t.selected.node !== null) {
+				t.selected.point.e = true;	// set selected node Excitement
+			}
+			return;
+		}
 		let method_fn = method === 'downstream' ? 
 			function(spring){
 				if (spring.point1.e && ! spring.point2.e && (! spring.point1.i || spring.point1 === t.selected.point)) {
