@@ -51,7 +51,7 @@ jQuery.fn.springy = function(params) {
 	const RenderFrameCall = params.onRenderFrame || null;
 	const RenderStopCall = params.onRenderStop || null;
 	const RenderStartCall = params.onRenderStart || null;
-	const pinWeight = params.pinWeight || 1000.0;
+	const pinWeight = params.pinWeight * 1.0 || 1000.0;
 	const exciteMethod = params.exciteMethod || 'none';
 	var nodeImages = {};
 	const edgeLabelsUpright = true;
@@ -61,9 +61,9 @@ jQuery.fn.springy = function(params) {
 	var zoomFactor = params.zoomFactor * 1.0 || 1.0;
 	zoomFactor = Math.max(Math.min(zoomFactor, 12), 1);
 	fontsize = Math.max(Math.min(fontsize, 30), 1);
-	var canvas = this[0];
-	var ctx = canvas.getContext("2d");
-	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor, pinWeight);
+	const canvas = this[0];
+	const ctx = canvas.getContext("2d");
+	var layout = this.layout = new Springy.Layout.ForceDirected(graph, ctx, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor, pinWeight);
 
 	var color1 = "#7FEFFF"; // blue
 	var color2 = "#50C0FF"; 
@@ -350,8 +350,8 @@ jQuery.fn.springy = function(params) {
 	var mouse_inside_node = function(item, mp) {
 		if (item !== null && item.node !== null && typeof(item.inside) == 'undefined') {
 			var node = item.node;
-			var boxWidth = node.getWidth();
-			var boxHeight = node.getHeight();
+			var boxWidth = node.getWidth(layout);
+			var boxHeight = node.getHeight(layout);
 			var pos = toScreen(item.point.p);
 			var p = toScreen(mp);
 			var diffx = Math.abs(pos.x - p.x);
@@ -387,46 +387,85 @@ jQuery.fn.springy = function(params) {
 		ctx.translate(diffx, diffy);
 	};
 
-	jQuery(canvas).mousedown(function(e) {
-		var pos = jQuery(this).offset();
-		var p1 = ctx.transformedPoint(e.pageX - pos.left, e.pageY - pos.top);
-		var p = fromScreen(p1);
+	var mousedown = function(canvas, pageX, pageY, offsetX, offsetY){
+		var pos = jQuery(canvas).offset();	// offsets in html window
+		var p1 = ctx.transformedPoint(pageX - pos.left, pageY - pos.top); // real canvas offsets
+		var p = fromScreen(p1);											// internal offsets relative to current BB
 		layout.selected = nearest = dragged = layout.nearest(p);
 		point_clicked = p;
 		mouse_inside_node(layout.selected, p);
 		if (layout.selected.inside) {
-			// DS 13.Oct 2019 : fixate or just move selected node depending on pinWeight
+			// DS 13.Oct 2019 : pin or just move selected node depending on pinWeight
 			dragged.point.m = layout.pinWeight;
 			layout.propagateExcitement();
 			
 			if (nodeSelected) {
-				nodeSelected(layout.selected.node);
+				nodeSelected(layout.selected.node, false);
 			}
 		} else {
-			lastX = e.offsetX || (e.pageX - pos.left);
-			lastY = e.offsetY || (e.pageY - pos.top);
+			lastX = offsetX || (pageX - pos.left);
+			lastY = offsetY || (pageY - pos.top);
 			
 			dragStart = ctx.transformedPoint(lastX,lastY);
 			canvas_dragged = false;
 		}
 
 		renderer.start(layout.selected.inside);
+	};
+
+	jQuery(canvas).mousedown(function(e) {
+		mousedown(this, e.pageX, e.pageY, e.offsetX, e.offsetY);
 	});
 
 	// Basic double click handler
 	jQuery(canvas).dblclick(function(e) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
-		layout.selected = layout.nearest(p);
-		var node = layout.selected.node;
-		if (node && node.data && node.data.ondoubleclick) {
-			node.data.ondoubleclick();
+		if (layout.selected && layout.selected.inside) {
+			var node = layout.selected.node;
+			if (node && node.data) {
+				if (node.data.ondoubleclick) {
+					node.data.ondoubleclick();
+				}
+				if (nodeSelected) {
+					nodeSelected(layout.selected.node, true);
+				}
+			}
 		}
 	});
 
-	jQuery(canvas).mousemove(function(e) {
-		var pos = jQuery(this).offset();
-		var p1 = ctx.transformedPoint(e.pageX - pos.left, e.pageY - pos.top);
+	var moveViewport = function(canvas, startx, starty, lastX, lastY) {
+		var pt = ctx.transformedPoint(lastX,lastY);
+		var diffx = pt.x-startx;
+		var diffy = pt.y-starty;
+		var xform = ctx.getTransform();
+		var xsize = canvas.width * xform.a;
+		var ysize = canvas.height * xform.a;
+		var xoffset = xform.e;
+		var yoffset = xform.f;
+		// 0 limit left:
+		if (diffx > 0 && xoffset + diffx > 0) {
+			diffx = 0;
+		}
+		// 0 limit right:
+		if (diffx < 0 && (xoffset + diffx + xsize) < canvas.width) {
+			diffx = 0;
+		}
+		// 0 limit top:
+		if (diffy > 0 && yoffset+diffy > 0) {
+			diffy = 0;
+		}
+		// 0 limit bottom:
+		if (diffy < 0 && (yoffset + diffy + ysize) < canvas.height) {
+			diffy = 0;
+		}
+		ctx.translate(diffx, diffy);
+		snap_to_canvas();
+	}
+	
+	var mousemove = function(canvas, pageX, pageY, offsetX, offsetY){
+		var pos = $(canvas).offset();
+		var p1 = ctx.transformedPoint(pageX - pos.left, pageY - pos.top);
 		var p = fromScreen(p1);
 		nearest = layout.nearest(p);
 		mouse_inside_node(nearest, p);
@@ -434,39 +473,38 @@ jQuery.fn.springy = function(params) {
 			dragged.point.p.x = p.x;
 			dragged.point.p.y = p.y;
 		} else {
-			lastX = e.offsetX || (e.pageX - pos.left);
-			lastY = e.offsetY || (e.pageY - pos.top);
+			lastX = offsetX || (pageX - pos.left);
+			lastY = offsetY || (pageY - pos.top);
 			canvas_dragged = true;
 			if (dragStart !== null){
-				var pt = ctx.transformedPoint(lastX,lastY);
-				var diffx = pt.x-dragStart.x;
-				var diffy = pt.y-dragStart.y;
-				var xform = ctx.getTransform();
-				var xsize = canvas.width * xform.a;
-				var ysize = canvas.height * xform.a;
-				var xoffset = xform.e;
-				var yoffset = xform.f;
-				// 0 limit left:
-				if (diffx > 0 && xoffset + diffx > 0) {
-					diffx = 0;
-				}
-				// 0 limit right:
-				if (diffx < 0 && (xoffset + diffx + xsize) < canvas.width) {
-					diffx = 0;
-				}
-				// 0 limit top:
-				if (diffy > 0 && yoffset+diffy > 0) {
-					diffy = 0;
-				}
-				// 0 limit bottom:
-				if (diffy < 0 && (yoffset + diffy + ysize) < canvas.height) {
-					diffy = 0;
-				}
-				ctx.translate(diffx, diffy);
-				snap_to_canvas();
+				moveViewport (canvas, dragStart.x, dragStart.y, lastX, lastY);
 			}
 		}
 		renderer.start(dragged !== null && dragged.inside);
+	};
+
+	jQuery(canvas).mousemove(function(e) {
+		mousemove(this, e.pageX, e.pageY, e.offsetX, e.offsetY);
+	});
+	
+	jQuery(canvas).on('touchstart', function(e){
+		let t = e.changedTouches[0]; // erster Finger
+		mousedown(this, t.pageX, t.pageY, t.offsetX, t.offsetY);
+	    e.preventDefault();
+	});
+	
+	jQuery(canvas).on('touchmove', function(e){
+		let t = e.changedTouches[0]; // erster Finger
+		mousemove(this, t.pageX, t.pageY, t.offsetX, t.offsetY);
+	    e.preventDefault();
+	});
+	
+	jQuery(canvas).on('touchend', function(e){
+		nearest = null;
+		dragged = null;
+		dragStart = null;
+		renderer.start(true);
+	    e.preventDefault();
 	});
 
 	jQuery(canvas).mouseleave(function(e) {
@@ -578,7 +616,8 @@ jQuery.fn.springy = function(params) {
 		}
 	}
 
-	var getTextWidth = boosted ? function(node) {
+	var getTextWidth = boosted ? function(node, layout) {
+		var ctx = layout.ctx;
 		if (node._width && node.fontsize === layout.fontsize)
 			return node._width;
 		var text = (node.data.label !== undefined && node.data.label) ? node.data.label : node.id;
@@ -589,7 +628,8 @@ jQuery.fn.springy = function(params) {
 		ctx.restore();
 		return node._width;
 	} :
-	function(node) {
+	function(node, layout) {
+		var ctx = layout.ctx;
 		var text = (node.data.label !== undefined) ? node.data.label : node.id;
 		if (node._width && node.fontsize === layout.fontsize && node._width[text])
 			return node._width[text];
@@ -606,7 +646,7 @@ jQuery.fn.springy = function(params) {
 		return width;
 	};
 
-	var getTextHeight = function(node) {
+	var getTextHeight = function(node, layout) {
 		return layout.fontsize;
 		// In a more modular world, this would actually read the font size, but I think leaving it a constant is sufficient for now.
 		// If you change the font size, I'd adjust this too.
@@ -622,10 +662,10 @@ jQuery.fn.springy = function(params) {
 		return height;
 	}
 
-	Springy.Node.prototype.getHeight = function() {
+	Springy.Node.prototype.getHeight = function(layout) {
 		var height;
 		if (this.data.image == undefined) {
-			height = getTextHeight(this);
+			height = layout.fontsize;
 		} else {
 			if (this.data.image.src in nodeImages && nodeImages[this.data.image.src].loaded) {
 				height = getImageHeight(this);
@@ -634,10 +674,10 @@ jQuery.fn.springy = function(params) {
 		return height;
 	}
 
-	Springy.Node.prototype.getWidth = function() {
+	Springy.Node.prototype.getWidth = function(layout) {
 		var width;
 		if (this.data.image == undefined) {
-			width = getTextWidth(this);
+			width = getTextWidth(this, layout);
 		} else {
 			if (this.data.image.src in nodeImages && nodeImages[this.data.image.src].loaded) {
 				width = getImageWidth(this);
@@ -681,8 +721,8 @@ jQuery.fn.springy = function(params) {
 			const s1 = toScreen(p1).add(offset);
 			const s2 = toScreen(p2).add(offset);
 
-			let boxWidth = edge.target.getWidth() * 1.2;
-			let boxHeight = edge.target.getHeight() * 2.0; // extra space for target polygons
+			let boxWidth = edge.target.getWidth(layout) * 1.2;
+			let boxHeight = edge.target.getHeight(layout) * 2.0; // extra space for target polygons
 
 			let intersection = intersect_line_box(s1, s2, {x: x2-boxWidth/2.0, y: y2-boxHeight/2.0}, boxWidth, boxHeight);
 
@@ -690,8 +730,8 @@ jQuery.fn.springy = function(params) {
 				intersection = s2;
 			}
 
-			boxWidth = edge.source.getWidth() * 1.2;
-			boxHeight = edge.source.getHeight() * 2.0; // extra space for source polygons
+			boxWidth = edge.source.getWidth(layout) * 1.2;
+			boxHeight = edge.source.getHeight(layout) * 2.0; // extra space for source polygons
 			
 			// DS: respect source node!
 			let lineStart = intersect_line_box(s1, s2, {x: x1-boxWidth/2.0, y: y1-boxHeight/2.0}, boxWidth, boxHeight);
@@ -783,8 +823,8 @@ jQuery.fn.springy = function(params) {
 		},
 		function drawNode(node, p) {
 			const s = toScreen(p);
-			const boxWidth = node.getWidth();
-			const boxHeight = node.getHeight() * 1.2;
+			const boxWidth = node.getWidth(layout);
+			const boxHeight = node.getHeight(layout) * 1.2;
 			var textColor = nodeTextColor;
 			// fill background
 			if (layout.isSelectedNode(node.id)) {
@@ -881,7 +921,7 @@ jQuery.fn.springy = function(params) {
 				break;
 				case 'doubleoctagon':
 					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true, true);
-					polygon(s, boxWidth, boxHeight, 8, true);
+					polygon(s, boxWidth, boxHeight, 8, true, false);
 				break;
 				case 'tripleoctagon':
 					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true, true);
@@ -969,9 +1009,24 @@ jQuery.fn.springy = function(params) {
 				ctx.clearRect(0,0,canvas.width,canvas.height);
 				snap_to_canvas();
 			}
+		},
+		function moveCanvas(p) {
+			// center view port over selected node
+			var pos = toScreen(p); // selected node point
+			var zoomFactor = layout.zoomFactor;
+			//console.log('moveCanvas - pos      :'+(pos.x * zoomFactor)+', '+(pos.y * zoomFactor));
+			//console.log('moveCanvas - canvas/2 :'+(canvas.width/2)+', '+(canvas.height/2) );
+			var xform = ctx.getTransform();
+			//console.log('moveCanvas - offset   :'+xform.e+', '+xform.f+', factor '+layout.zoomFactor);
+			let diffx = -((pos.x * zoomFactor) - (canvas.width/2) + xform.e)/layout.zoomFactor;
+			let diffy = -((pos.y * zoomFactor) - (canvas.height/2) + xform.f)/layout.zoomFactor;
+			//console.log('moveCanvas - diff     :'+diffx+', '+diffy);
+			ctx.translate(diffx, diffy);
+			snap_to_canvas();
 		}
 	);
 	renderer.setExciteMethod(exciteMethod);
+	renderer.optimizeMass(1);
 	renderer.start(true);
 
 	// helpers for figuring out where to draw arrows

@@ -331,8 +331,9 @@
 
 	// -----------
 	var Layout = Springy.Layout = {};
-	Layout.ForceDirected = function(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor, pinWeight) {
+	Layout.ForceDirected = function(graph, ctx, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed, fontsize, fontname, zoomFactor, pinWeight) {
 		this.graph = graph;
+		this.ctx = ctx;
 		this.stiffness = stiffness; // spring stiffness constant
 		this.repulsion = repulsion; // repulsion constant
 		this.damping = damping; // velocity damping factor
@@ -483,10 +484,22 @@
 		t.damping = param.damping || t.damping; // velocity damping factor
 		t.minEnergyThreshold = param.minEnergyThreshold || t.minEnergyThreshold; //threshold used to determine render stop
 		t.maxSpeed = param.maxSpeed || t.maxSpeed; // nodes aren't allowed to exceed this speed
-		const len = this.graph.edges.length;
-		for(let n=0;n<len;n++) {
-			this.edgeSprings[n].k = t.stiffness;
-		}
+		t.eachSpring(function(e) {
+			e.k  = t.stiffness;
+		});
+	};
+	// when nodes have many edges the calculation of forces causes shaking and jumping of the nodes.
+	// by adding a counter mass equal to the number of edges can stop that errors.
+	Layout.ForceDirected.prototype.optimizeMass = function(m) {
+		const c = (m !== undefined)? m : 1;
+		this.eachNode(function(node, point) {
+			point.c = c;
+		});
+		this.eachSpring(function(spring){
+			// apply mass to each end point
+			spring.point1.c += c;;
+			spring.point2.c += c;;
+		});
 	};
 
 	let timeslice = 200000;
@@ -509,7 +522,7 @@
 	Layout.ForceDirected.prototype.applyCoulombsLaw = boosted === 2 ? function() {
 		// Boosted method 2 -- hand written assembler code - loops variables are transformed into static memory array addresses
 		const len = this.graph.nodes.length;
-		let dir = new Float64Array(8); 
+		let dir = new Float64Array(9); 
 		dir[7] = this.repulsion;
 		// dir[0]=dir_x; dir[1]=dir_y; dir[2]=distance; dir[3]=force
 		// dir[4]=p1.x; dir[5]=p1.y; dir[6]=1/p1.m; dir[7]=repulsion
@@ -517,7 +530,7 @@
 			const point1 = this.nodePoints[n];
 			dir[4] = point1.p.x; 
 			dir[5] = point1.p.y;
-			dir[6] = 1 / point1.m;
+			dir[6] = 1 / (point1.m + point1.c);
 			for(let m=n+1;m<len;m++) {
 				const point2 = this.nodePoints[m];
 				dir[0] = dir[4] - point2.p.x;	// subtract
@@ -530,8 +543,9 @@
 				dir[1] *= dir[3]; // apply forces
 				point1.a.x += dir[0] * dir[6];
 				point1.a.y += dir[1] * dir[6];
-				point2.a.x -= dir[0] / point2.m;
-				point2.a.y -= dir[1] / point2.m;
+				dir[8] = 1 / (point2.m + point2.c);
+				point2.a.x -= dir[0] * dir[8];
+				point2.a.y -= dir[1] * dir[8];
 			};
 			tic_fork (len-n, 1);
 		};
@@ -552,10 +566,10 @@
 				const force = this.repulsion / (distance * distance * 0.5);
 				dir.x *= force;
 				dir.y *= force; // apply forces
-				point1.a.x += dir.x / point1.m;
-				point1.a.y += dir.y / point1.m;
-				point2.a.x -= dir.x / point2.m;
-				point2.a.y -= dir.y / point2.m;
+				point1.a.x += dir.x / (point1.m + point1.c);
+				point1.a.y += dir.y / (point1.m + point1.c);
+				point2.a.x -= dir.x / (point2.m + point2.c);
+				point2.a.y -= dir.y / (point2.m + point2.c);
 			};
 			tic_fork (len-n, 1);
 		};
@@ -590,10 +604,13 @@
 			dir.y = dir.y / distance || 0;		// direction
 			dir.x *= displacement;
 			dir.y *= displacement;
-			spring.point1.a.x += dir.x / spring.point1.m;
-			spring.point1.a.y += dir.y / spring.point1.m;
-			spring.point2.a.x -= dir.x / spring.point2.m;
-			spring.point2.a.y -= dir.y / spring.point2.m;
+			// apply force to each end point
+			const force1 = 1.0 / (spring.point1.m + spring.point1.c);
+			spring.point1.a.x += dir.x * force1;
+			spring.point1.a.y += dir.y * force1;
+			const force2 = 1.0 / (spring.point2.m + spring.point2.c);
+			spring.point2.a.x -= dir.x * force2;
+			spring.point2.a.y -= dir.y * force2;
 		};
 	} :
 	function() {
@@ -688,7 +705,7 @@
 		var energy = 0.0;
 		this.eachNode(function(node, point) {
 			var speed = point.v.magnitude();
-			energy += 0.5 * point.m * speed * speed;
+			energy += 0.5 * (point.m + point.c) * speed * speed;
 		});
 
 		return energy;
@@ -910,6 +927,7 @@
 	Layout.ForceDirected.Point = function(position, mass, insulator) {
 		this.p = position; // position
 		this.m = mass; // mass
+		this.c = 1.0;  // connections	
 		this.i = insulator; // insulator
 		this.e = false; // excited
 		this.v = new Vector(0, 0); // velocity
@@ -917,7 +935,7 @@
 	};
 
 	Layout.ForceDirected.Point.prototype.applyForce = function(force) {
-		this.a = this.a.add(force.divide(this.m));
+		this.a = this.a.add(force.divide(this.m + this.c));
 	};
 
 	// Spring
@@ -943,7 +961,7 @@
 	 * @param onRenderStart optional callback function that gets executed whenever rendering starts.
 	 * @param onRenderFrame optional callback function that gets executed after each frame is rendered.
 	 */
-	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, getCanvasPos, onRenderStop, onRenderStart, onRenderFrame, zoomCanvas) {
+	var Renderer = Springy.Renderer = function(layout, clear, drawEdge, drawNode, getCanvasPos, onRenderStop, onRenderStart, onRenderFrame, zoomCanvas, moveCanvas) {
 		this.layout = layout;
 		this.clear = clear;
 		this.drawEdge = drawEdge;
@@ -953,6 +971,7 @@
 		this.onRenderStart = onRenderStart;
 		this.onRenderFrame = onRenderFrame;
 		this.zoomCanvas = zoomCanvas;
+		this.moveCanvas = moveCanvas;
 		this.layout.graph.addGraphListener(this);
 	}
 
@@ -992,6 +1011,24 @@
 		}
 	};
 
+	Renderer.prototype.focusSelected = function() {
+	var result = false;
+		var t = this;
+		var factor = 1.0 / (t.layout.realFontsize / 10.0); // zoom to font size 10
+		if (t.layout.scaleZoomFactor(factor)) {
+			t.layout.scaleFontSize(1.0);
+			if (t.zoomCanvas !== undefined) { t.zoomCanvas(factor); }
+			t.start(true);
+			result = true;
+		}
+		if (t.layout.selected) {
+			if (t.moveCanvas !== undefined) { t.moveCanvas(t.layout.selected.point.p); }
+			t.start(true);
+			result = true;
+		}
+		return result; // return true when position of zoom was uodated
+	};
+
 	Renderer.prototype.setPinWeight = function(weight) {
 		this.layout.setPinWeight(weight);
 	};
@@ -1004,6 +1041,11 @@
 
 	Renderer.prototype.setParameter = function(param) {
 		this.layout.setParameter(param);	
+		this.start(true);
+	};
+
+	Renderer.prototype.optimizeMass = function(m) {
+		this.layout.optimizeMass(m);	
 		this.start(true);
 	};
 
