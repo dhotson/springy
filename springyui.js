@@ -316,7 +316,6 @@ jQuery.fn.springy = function(params) {
 	};
 
 	var star = function(pos, width, height){
-	  // var dim = width / 2 + height / 3 * 2;
 	  var dim = height * 4 / 3;
 	  var pi5 = Math.PI / 5;
 	  ctx.save();
@@ -346,6 +345,7 @@ jQuery.fn.springy = function(params) {
 	var lastX=canvas.width/2, lastY=canvas.height/2;
 	var dragStart = null;
 	var canvas_dragged;
+	var tapedTwice = false;
 	
 	var mouse_inside_node = function(item, mp) {
 		if (item !== null && item.node !== null && typeof(item.inside) == 'undefined') {
@@ -418,9 +418,9 @@ jQuery.fn.springy = function(params) {
 	});
 
 	// Basic double click handler
-	jQuery(canvas).dblclick(function(e) {
-		var pos = jQuery(this).offset();
-		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
+	var doubleclick = function(canvas, pageX, pageY){
+		var pos = jQuery(canvas).offset();
+		var p = fromScreen({x: pageX - pos.left, y: pageY - pos.top});
 		if (layout.selected && layout.selected.inside) {
 			var node = layout.selected.node;
 			if (node && node.data) {
@@ -432,6 +432,10 @@ jQuery.fn.springy = function(params) {
 				}
 			}
 		}
+	};
+	
+	jQuery(canvas).dblclick(function(e) {
+		doubleclick(this, e.pageX, e.pageY);
 	});
 
 	var moveViewport = function(canvas, startx, starty, lastX, lastY) {
@@ -488,8 +492,15 @@ jQuery.fn.springy = function(params) {
 	});
 	
 	jQuery(canvas).on('touchstart', function(e){
-		let t = e.changedTouches[0]; // erster Finger
-		mousedown(this, t.pageX, t.pageY, t.offsetX, t.offsetY);
+		let t = e.changedTouches[0]; // first finger
+		if (!tapedTwice) {
+        	tapedTwice = true;
+			setTimeout( function() { tapedTwice = false; }, 300 );
+
+			mousedown(this, t.pageX, t.pageY, t.offsetX, t.offsetY);
+		} else {
+			doubleclick(this, t.pageX, t.pageY);
+		}
 	    e.preventDefault();
 	});
 	
@@ -556,6 +567,16 @@ jQuery.fn.springy = function(params) {
 	
 	canvas.addEventListener('DOMMouseScroll',handleScroll,false);
 	canvas.addEventListener('mousewheel',handleScroll,false);
+	
+	var handleGesture = function(evt){
+		var delta = evt.scale ? evt.scale / 20 : 0;
+		if (delta) zoom(delta);
+		return evt.preventDefault() && false;
+	};
+	
+	canvas.addEventListener('gesturestart',handleGesture,false);
+	canvas.addEventListener('gesturechange',handleGesture,false);
+	canvas.addEventListener('gestureend',handleGesture,false);
 	// -------------------------------------------------
 
 	// Adds ctx.getTransform() - returns an SVGMatrix
@@ -920,13 +941,13 @@ jQuery.fn.springy = function(params) {
 					polygon(s, boxWidth, boxHeight, 8, true, true);
 				break;
 				case 'doubleoctagon':
-					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true, true);
-					polygon(s, boxWidth, boxHeight, 8, true, false);
+					polygon(s, boxWidth*0.91, boxHeight*1.2, 8, true, true);
+					polygon(s, boxWidth*0.9, boxHeight, 8, true, false);
 				break;
 				case 'tripleoctagon':
-					polygon(s, boxWidth*1.1, boxHeight*1.2, 8, true, true);
+					polygon(s, boxWidth*1.05, boxHeight*1.2, 8, true, true);
 					polygon(s, boxWidth, boxHeight, 8, true, false);
-					polygon(s, boxWidth*0.9, boxHeight*0.8, 8, true, false);
+					polygon(s, boxWidth*0.97, boxHeight*0.8, 8, true, false);
 				break;
 				case 'star':
 					textColor = 'DarkGray';
@@ -1022,6 +1043,7 @@ jQuery.fn.springy = function(params) {
 			let diffy = -((pos.y * zoomFactor) - (canvas.height/2) + xform.f)/layout.zoomFactor;
 			//console.log('moveCanvas - diff     :'+diffx+', '+diffy);
 			ctx.translate(diffx, diffy);
+			ctx.clearRect(0,0,canvas.width,canvas.height);
 			snap_to_canvas();
 		}
 	);
