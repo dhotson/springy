@@ -93,6 +93,9 @@ jQuery.fn.springy = function(params) {
 			}
 		}
 
+		if (nearest.node && nearest.node.data && nearest.node.data.onmousedown) {
+			nearest.node.data.onmousedown(selected, e, toScreen(nearest.point.p));
+		}
 		renderer.start();
 	});
 
@@ -103,7 +106,7 @@ jQuery.fn.springy = function(params) {
 		selected = layout.nearest(p);
 		node = selected.node;
 		if (node && node.data && node.data.ondoubleclick) {
-			node.data.ondoubleclick();
+			node.data.ondoubleclick(selected, e, toScreen(layout.point(node).p));
 		}
 	});
 
@@ -117,6 +120,9 @@ jQuery.fn.springy = function(params) {
 			dragged.point.p.y = p.y;
 		}
 
+		if (nearest.node && nearest.node.data && nearest.node.data.onmousemove) {
+			nearest.node.data.onmousemove(nearest, e, toScreen(nearest.point.p));
+		}
 		renderer.start();
 	});
 
