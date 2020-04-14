@@ -27,12 +27,13 @@ Copyright (c) 2010 Dennis Hotson
 
 jQuery.fn.springy = function(params) {
 	var graph = this.graph = params.graph || new Springy.Graph();
-	var nodeFont = "16px Verdana, sans-serif";
-	var edgeFont = "8px Verdana, sans-serif";
+	var nodeFont = params.nodeFont || "16px Verdana, sans-serif";
+	var edgeFont = params.edgeFont || "8px Verdana, sans-serif";
 	var stiffness = params.stiffness || 400.0;
 	var repulsion = params.repulsion || 400.0;
 	var damping = params.damping || 0.5;
 	var minEnergyThreshold = params.minEnergyThreshold || 0.00001;
+	var maxSpeed = params.maxSpeed || Infinity;
 	var nodeSelected = params.nodeSelected || null;
 	var nodeImages = {};
 	var edgeLabelsUpright = true;
@@ -40,7 +41,7 @@ jQuery.fn.springy = function(params) {
 	var canvas = this[0];
 	var ctx = canvas.getContext("2d");
 
-	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold);
+	var layout = this.layout = new Springy.Layout.ForceDirected(graph, stiffness, repulsion, damping, minEnergyThreshold, maxSpeed);
 
 	// calculate bounding box of graph layout.. with ease-in
 	var currentBB = layout.getBoundingBox();
@@ -93,6 +94,9 @@ jQuery.fn.springy = function(params) {
 			}
 		}
 
+		if (nearest.node && nearest.node.data && nearest.node.data.onmousedown) {
+			nearest.node.data.onmousedown(selected, e, toScreen(nearest.point.p));
+		}
 		renderer.start();
 	});
 
@@ -101,9 +105,8 @@ jQuery.fn.springy = function(params) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
 		selected = layout.nearest(p);
-		node = selected.node;
-		if (node && node.data && node.data.ondoubleclick) {
-			node.data.ondoubleclick();
+		if (selected && selected.node && selected.node.data && selected.node.data.ondoubleclick) {
+			selected.node.data.ondoubleclick(selected, e, toScreen(layout.point(node).p));
 		}
 	});
 
@@ -117,6 +120,9 @@ jQuery.fn.springy = function(params) {
 			dragged.point.p.y = p.y;
 		}
 
+		if (nearest.node && nearest.node.data && nearest.node.data.onmousemove) {
+			nearest.node.data.onmousemove(nearest, e, toScreen(nearest.point.p));
+		}
 		renderer.start();
 	});
 
