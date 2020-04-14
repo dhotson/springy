@@ -105,9 +105,8 @@ jQuery.fn.springy = function(params) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
 		selected = layout.nearest(p);
-		node = selected.node;
-		if (node && node.data && node.data.ondoubleclick) {
-			node.data.ondoubleclick(selected, e, toScreen(layout.point(node).p));
+		if (selected && selected.node && selected.node.data && selected.node.data.ondoubleclick) {
+			selected.node.data.ondoubleclick(selected, e, toScreen(layout.point(node).p));
 		}
 	});
 
