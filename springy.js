@@ -675,6 +675,11 @@
 	 */
 	Renderer.prototype.start = function(done) {
 		var t = this;
+		var renderStop = function () {
+			t.onRenderStop && t.onRenderStop();
+			done && done();
+		}
+		
 		this.layout.start(function render() {
 			t.clear();
 
@@ -685,9 +690,9 @@
 			t.layout.eachNode(function(node, point) {
 				t.drawNode(node, point.p);
 			});
-			
+
 			if (t.onRenderFrame !== undefined) { t.onRenderFrame(); }
-		}, this.onRenderStop, this.onRenderStart);
+		}, renderStop, this.onRenderStart);
 	};
 
 	Renderer.prototype.stop = function() {
